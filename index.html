@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Loader2, Building2, Search, WifiOff, RefreshCw, ExternalLink, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
+import { Loader2, Building2, Search, WifiOff, RefreshCw, ExternalLink, ArrowUpRight, ArrowDownRight, Minus, TrendingUp, TrendingDown, Activity } from 'lucide-react';
 
 // --- CONFIGURACIÓN ---
 // URL DE PRODUCCIÓN PROPORCIONADA
@@ -73,11 +73,13 @@ export default function App() {
         }
 
         const jsonData = JSON.parse(textData);
-        // Ordenamos por venta 2026 descendente
-        const sortedData = jsonData.sort((a, b) => b.ventas2026 - a.ventas2026);
+        // Inicialmente no ordenamos aquí, lo haremos en el useMemo de grupos
+        setDataRazonesSociales(jsonData);
         
-        setDataRazonesSociales(sortedData);
-        if (sortedData.length > 0) setSelectedId(sortedData[0].id);
+        // Seleccionamos el primero por defecto (basado en lógica de ordenamiento posterior)
+        // Para simplificar, seleccionamos el primero que venga en la data cruda, luego el usuario cambia
+        if (jsonData.length > 0) setSelectedId(jsonData[0].id);
+        
         setIsDemoMode(false);
         setError(null);
 
@@ -95,10 +97,50 @@ export default function App() {
     fetchData();
   }, []);
 
-  const filteredCompanies = useMemo(() => {
-    return dataRazonesSociales.filter(c => 
+  // Lógica de Agrupación y Ordenamiento
+  const groupedCompanies = useMemo(() => {
+    // 1. Filtrar por búsqueda
+    const filtered = dataRazonesSociales.filter(c => 
       c.nombre.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    // 2. Calcular crecimiento para cada empresa
+    const withGrowth = filtered.map(c => {
+      let growth = 0;
+      if (c.ventas2025 > 0) {
+        growth = ((c.ventas2026 - c.ventas2025) / c.ventas2025) * 100;
+      } else if (c.ventas2026 > 0) {
+        growth = 100; // Cliente nuevo
+      } else if (c.ventas2025 > 0 && c.ventas2026 === 0) {
+        growth = -100; // Cliente perdido
+      }
+      return { ...c, growth };
+    });
+
+    // 3. Separar en grupos
+    const highGrowth = []; // > 10%
+    const stableGrowth = []; // 0% a 10%
+    const negativeGrowth = []; // < 0%
+
+    withGrowth.forEach(c => {
+      if (c.growth > 10) {
+        highGrowth.push(c);
+      } else if (c.growth >= 0) {
+        stableGrowth.push(c);
+      } else {
+        negativeGrowth.push(c);
+      }
+    });
+
+    // 4. Ordenar cada grupo
+    // Positivos: Alfabético
+    highGrowth.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    stableGrowth.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    
+    // Negativos: Por desempeño (los más bajos primero, ej: -80% antes que -5%)
+    negativeGrowth.sort((a, b) => a.growth - b.growth);
+
+    return { highGrowth, stableGrowth, negativeGrowth, totalCount: filtered.length };
   }, [dataRazonesSociales, searchTerm]);
 
   const selectedCompany = useMemo(() => 
@@ -118,11 +160,49 @@ export default function App() {
     }
   };
 
+  const renderCompanyRow = (company) => {
+    const isSelected = company.id === selectedId;
+    const growth = company.growth;
+    const hasGrowth = company.ventas2025 > 0 || company.ventas2026 > 0;
+
+    return (
+      <div 
+        key={company.id}
+        onClick={() => setSelectedId(company.id)}
+        className={`grid grid-cols-12 px-4 py-3 border-b border-slate-50 cursor-pointer transition-all duration-200 items-start hover:bg-slate-50 relative group
+          ${isSelected ? 'bg-blue-50/60' : ''}
+        `}
+      >
+        {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r"></div>}
+        
+        <div className="col-span-4 pr-2 pl-2">
+          <p className={`text-xs font-bold truncate ${isSelected ? 'text-blue-700' : 'text-slate-700'}`}>
+            {company.nombre}
+          </p>
+          {/* BADGE DE CRECIMIENTO */}
+          {hasGrowth && (
+              <div className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] mt-1 font-medium border ${growth >= 0 ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                  {growth >= 0 ? <ArrowUpRight size={8} className="mr-0.5"/> : <ArrowDownRight size={8} className="mr-0.5"/>}
+                  {growth >= 0 ? '+' : ''}{growth.toFixed(1)}%
+              </div>
+          )}
+        </div>
+        {/* CIFRAS COMPLETAS */}
+        <div className="col-span-4 text-right text-[10px] sm:text-xs text-slate-500 font-medium font-mono truncate pt-0.5">
+          {formatCurrency(company.ventas2025)}
+        </div>
+        <div className={`col-span-4 text-right text-[10px] sm:text-xs font-bold font-mono truncate pt-0.5 ${company.ventas2026 >= company.ventas2025 ? 'text-slate-800' : 'text-red-600'}`}>
+          {formatCurrency(company.ventas2026)}
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50 flex-col gap-4 font-sans">
         <Loader2 className="animate-spin text-blue-600" size={48} />
-        <p className="text-slate-500 font-medium animate-pulse">Cargando desglose mensual...</p>
+        <p className="text-slate-500 font-medium animate-pulse">Cargando datos...</p>
       </div>
     );
   }
@@ -135,7 +215,7 @@ export default function App() {
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between text-xs text-amber-900 shadow-sm z-50">
           <div className="flex items-center gap-2">
             <WifiOff size={14} className="text-amber-600" />
-            <span>Modo Demo: {error} (Actualiza tu script para ver desglose real)</span>
+            <span>Modo Demo: {error} (Actualiza tu script)</span>
           </div>
           <div className="flex items-center gap-2">
             <a href={GOOGLE_SCRIPT_URL} target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-700">Verificar API</a>
@@ -167,56 +247,54 @@ export default function App() {
             <div className="col-span-4 text-right">2026 Total</div>
           </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar">
-            {filteredCompanies.map((company) => {
-              const isSelected = company.id === selectedId;
-              
-              // CÁLCULO DE CRECIMIENTO PARA LA LISTA LATERAL
-              let growth = 0;
-              let hasGrowth = false;
-              if (company.ventas2025 > 0) {
-                growth = ((company.ventas2026 - company.ventas2025) / company.ventas2025) * 100;
-                hasGrowth = true;
-              } else if (company.ventas2026 > 0) {
-                 growth = 100; // Crecimiento total si empezó de 0
-                 hasGrowth = true;
-              }
-
-              return (
-                <div 
-                  key={company.id}
-                  onClick={() => setSelectedId(company.id)}
-                  className={`grid grid-cols-12 px-4 py-3 border-b border-slate-50 cursor-pointer transition-all duration-200 items-start hover:bg-slate-50 relative group
-                    ${isSelected ? 'bg-blue-50/60' : ''}
-                  `}
-                >
-                  {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r"></div>}
-                  
-                  <div className="col-span-4 pr-2 pl-2">
-                    <p className={`text-xs font-bold truncate ${isSelected ? 'text-blue-700' : 'text-slate-700'}`}>
-                      {company.nombre}
-                    </p>
-                    {/* BADGE DE CRECIMIENTO */}
-                    {hasGrowth && (
-                        <div className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] mt-1 font-medium border ${growth >= 0 ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
-                            {growth >= 0 ? <ArrowUpRight size={8} className="mr-0.5"/> : <ArrowDownRight size={8} className="mr-0.5"/>}
-                            {growth >= 0 ? '+' : ''}{growth.toFixed(1)}%
-                        </div>
-                    )}
-                  </div>
-                  {/* CIFRAS COMPLETAS (NO 'K') */}
-                  <div className="col-span-4 text-right text-[10px] sm:text-xs text-slate-500 font-medium font-mono truncate pt-0.5">
-                    {formatCurrency(company.ventas2025)}
-                  </div>
-                  <div className={`col-span-4 text-right text-[10px] sm:text-xs font-bold font-mono truncate pt-0.5 ${company.ventas2026 >= company.ventas2025 ? 'text-slate-800' : 'text-red-600'}`}>
-                    {formatCurrency(company.ventas2026)}
-                  </div>
+          <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50">
+            
+            {/* SECCIÓN 1: CRECIMIENTO ALTO (>10%) */}
+            {groupedCompanies.highGrowth.length > 0 && (
+              <>
+                <div className="sticky top-0 z-10 bg-green-50/90 backdrop-blur-sm px-4 py-1.5 border-y border-green-100 text-[10px] font-bold text-green-700 uppercase tracking-wide flex items-center">
+                  <TrendingUp size={12} className="mr-1.5" />
+                  Crecimiento Mayor al 10%
+                  <span className="ml-auto bg-green-200 text-green-800 px-1.5 rounded-full text-[9px]">{groupedCompanies.highGrowth.length}</span>
                 </div>
-              );
-            })}
+                {groupedCompanies.highGrowth.map(renderCompanyRow)}
+              </>
+            )}
+
+            {/* SECCIÓN 2: CRECIMIENTO ESTABLE (0% - 10%) */}
+            {groupedCompanies.stableGrowth.length > 0 && (
+              <>
+                <div className="sticky top-0 z-10 bg-blue-50/90 backdrop-blur-sm px-4 py-1.5 border-y border-blue-100 text-[10px] font-bold text-blue-700 uppercase tracking-wide flex items-center">
+                  <Activity size={12} className="mr-1.5" />
+                  Crecimiento Estable (0% - 10%)
+                  <span className="ml-auto bg-blue-200 text-blue-800 px-1.5 rounded-full text-[9px]">{groupedCompanies.stableGrowth.length}</span>
+                </div>
+                {groupedCompanies.stableGrowth.map(renderCompanyRow)}
+              </>
+            )}
+
+            {/* SECCIÓN 3: DECRECIMIENTO (Negativos) */}
+            {groupedCompanies.negativeGrowth.length > 0 && (
+              <>
+                <div className="sticky top-0 z-10 bg-red-50/90 backdrop-blur-sm px-4 py-1.5 border-y border-red-100 text-[10px] font-bold text-red-700 uppercase tracking-wide flex items-center">
+                  <TrendingDown size={12} className="mr-1.5" />
+                  Decrecimiento
+                  <span className="ml-auto bg-red-200 text-red-800 px-1.5 rounded-full text-[9px]">{groupedCompanies.negativeGrowth.length}</span>
+                </div>
+                {groupedCompanies.negativeGrowth.map(renderCompanyRow)}
+              </>
+            )}
+
+            {groupedCompanies.totalCount === 0 && (
+               <div className="p-8 text-center flex flex-col items-center justify-center">
+                 <Search className="text-slate-300 mb-2" size={32}/>
+                 <p className="text-slate-400 text-sm">No se encontraron resultados</p>
+               </div>
+            )}
           </div>
+          
           <div className="p-2 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-400 text-center">
-            {filteredCompanies.length} Clientes listados
+            {groupedCompanies.totalCount} Clientes listados
           </div>
         </div>
 
@@ -236,7 +314,7 @@ export default function App() {
                 <p className="text-sm text-slate-500">Comparativo Enero + Febrero (Desglose Mensual)</p>
               </div>
 
-              {/* TABLA 2025 - CON SCROLL */}
+              {/* TABLA 2025 */}
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 flex justify-between items-center">
                   <h3 className="font-bold text-slate-700">Facturación 2025</h3>
@@ -283,7 +361,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* TABLA 2026 - CON SCROLL */}
+              {/* TABLA 2026 */}
               <div className="bg-white rounded-xl shadow-sm border border-blue-200 ring-2 ring-blue-50 overflow-hidden">
                 <div className="bg-blue-50 px-6 py-3 border-b border-blue-100 flex justify-between items-center">
                   <h3 className="font-bold text-blue-900">Facturación 2026</h3>
@@ -320,7 +398,6 @@ export default function App() {
                             growth = ((vTotal26 - vTotal25) / vTotal25) * 100;
                             hasGrowth = true;
                           } else if (vTotal26 > 0 && vTotal25 === 0) {
-                              // Caso nuevo producto
                               hasGrowth = true;
                               growth = 100;
                           }
