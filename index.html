@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dashboard Comercial</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -29,7 +29,6 @@
         .lang-btn { opacity: 0.6; filter: grayscale(100%); transition: all 0.2s; }
         .lang-btn.active { opacity: 1; filter: grayscale(0%); transform: scale(1.1); font-weight: bold; text-decoration: underline; text-decoration-color: #2563eb; text-underline-offset: 4px; }
         
-        /* Modal Styles */
         .modal-overlay { background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px); }
     </style>
 </head>
@@ -47,13 +46,13 @@
                     <p id="modal-subtitle" class="text-xs text-slate-500 mt-1"></p>
                 </div>
                 <button onclick="closeModal()" class="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             
             <div class="flex-1 overflow-y-auto custom-scrollbar p-0">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-xs uppercase text-slate-500 sticky top-0 border-b border-slate-200">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-500 sticky top-0 border-b border-slate-200 shadow-sm">
                         <tr>
                             <th class="px-6 py-3 font-semibold" data-i18n="th_invoice"># Factura</th>
                             <th class="px-6 py-3 font-semibold text-right" data-i18n="th_amount">Monto</th>
@@ -78,73 +77,79 @@
         <button onclick="window.location.reload()" class="underline ml-4">Recargar</button>
     </div>
 
-    <div class="flex flex-1 overflow-hidden">
+    <div class="flex flex-1 overflow-hidden relative" id="main-container">
         
-        <!-- PANEL IZQUIERDO -->
-        <div class="w-5/12 md:w-1/3 bg-white border-r border-slate-200 flex flex-col shadow-xl z-20">
+        <!-- PANEL IZQUIERDO (LISTA) -->
+        <div id="left-panel" class="w-full md:w-5/12 lg:w-1/3 bg-white border-r border-slate-200 flex flex-col shadow-xl z-20 absolute inset-0 md:relative transition-transform duration-300">
             <div class="bg-slate-50 border-b border-slate-200 p-4 pb-2">
                 <div class="flex justify-between items-start mb-4">
-                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2 max-w-[70%] leading-tight" data-i18n="dashboard_title">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2 max-w-[65%] leading-tight" data-i18n="dashboard_title">
                         <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         Dashboard Comercial
                     </h2>
-                    <div class="flex gap-3 bg-white px-2 py-1 rounded-full border border-slate-200 shadow-sm">
+                    <div class="flex gap-2 bg-white px-2 py-1 rounded-full border border-slate-200 shadow-sm flex-shrink-0">
                         <button onclick="changeLanguage('es')" id="lang-es" class="lang-btn active text-xs flex items-center gap-1"><span>MX</span> 🇲🇽</button>
                         <div class="w-px bg-slate-200 h-4 self-center"></div>
                         <button onclick="changeLanguage('fr')" id="lang-fr" class="lang-btn text-xs flex items-center gap-1"><span>FR</span> 🇫🇷</button>
                     </div>
                 </div>
                 
-                <!-- PESTAÑAS (ORDEN INVERTIDO: Febrero primero) -->
-                <div class="flex gap-3 mb-3">
-                    <button onclick="changeView('february')" id="tab-february" class="flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active">
-                        <span data-i18n="tab_feb">Solo Febrero</span><br/><span class="font-normal opacity-80 text-[9px]" data-i18n="tab_feb_sub">(Comparativo Mes)</span>
+                <!-- PESTAÑAS (MÁS GRANDES PARA TOUCH) -->
+                <div class="flex gap-2 mb-3">
+                    <button onclick="changeView('february')" id="tab-february" class="flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active touch-manipulation">
+                        <span data-i18n="tab_feb">Solo Febrero</span><br/><span class="font-normal opacity-80 text-[10px] md:text-[9px]" data-i18n="tab_feb_sub">(Comparativo Mes)</span>
                     </button>
-                    <button onclick="changeView('bimester')" id="tab-bimester" class="flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive">
-                        <span data-i18n="tab_bimester">1er Bimestre</span><br/><span class="font-normal opacity-80 text-[9px]" data-i18n="tab_bimester_sub">(Ene + Feb)</span>
+                    <button onclick="changeView('bimester')" id="tab-bimester" class="flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive touch-manipulation">
+                        <span data-i18n="tab_bimester">1er Bimestre</span><br/><span class="font-normal opacity-80 text-[10px] md:text-[9px]" data-i18n="tab_bimester_sub">(Ene + Feb)</span>
                     </button>
                 </div>
 
-                <div class="relative mt-1">
+                <div class="relative mt-2">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
-                    <input type="text" id="search-input" placeholder="Buscar cliente..." class="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all shadow-sm">
+                    <input type="text" id="search-input" placeholder="Buscar cliente..." class="w-full pl-9 pr-3 py-3 md:py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all shadow-sm">
                 </div>
             </div>
-            <!-- ENCABEZADOS DE LISTA -->
-            <div class="grid grid-cols-12 px-4 py-2 bg-slate-100 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            <!-- ENCABEZADOS -->
+            <div class="grid grid-cols-12 px-4 py-3 bg-slate-100 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider sticky top-0 z-10">
                 <div class="col-span-6 pl-1" data-i18n="col_client">Cliente</div>
                 <div class="col-span-3 text-right header-year-2025">2025</div>
                 <div class="col-span-3 text-right header-year-2026">2026</div>
             </div>
             <div id="clients-list" class="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 relative">
                 <div id="list-loader" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
-                    <svg class="animate-spin h-8 w-8 text-blue-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <svg class="animate-spin h-10 w-10 text-blue-600 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     <span class="text-xs text-slate-500 animate-pulse" data-i18n="loading">Cargando datos...</span>
                 </div>
             </div>
-            <div id="list-footer" class="p-2 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-400 text-center font-medium">0 Clientes listados</div>
+            <div id="list-footer" class="p-3 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-400 text-center font-medium">0 Clientes listados</div>
         </div>
 
-        <!-- PANEL DERECHO -->
-        <div id="detail-panel" class="w-7/12 md:w-2/3 flex flex-col h-full bg-slate-100 overflow-y-auto p-4 md:p-6 gap-6 custom-scrollbar">
+        <!-- PANEL DERECHO (DETALLE) -->
+        <div id="detail-panel" class="w-full md:w-7/12 lg:w-2/3 flex flex-col h-full bg-slate-100 overflow-y-auto p-4 md:p-6 gap-6 custom-scrollbar absolute inset-0 md:relative z-30 hidden md:flex">
+            
+            <!-- BOTÓN VOLVER (SOLO MÓVIL) -->
+            <button onclick="backToMobileList()" class="md:hidden flex items-center gap-2 text-slate-500 hover:text-blue-600 font-medium mb-2 w-fit">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                <span data-i18n="back_list">Volver a la lista</span>
+            </button>
+
             <div id="empty-state" class="flex-1 flex flex-col items-center justify-center text-slate-400">
-                <svg class="w-16 h-16 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                <svg class="w-20 h-20 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                 <p data-i18n="empty_state">Selecciona un cliente para ver su desglose</p>
             </div>
             
-            <div id="detail-content" class="hidden flex-col gap-6 animate-fade-in">
+            <div id="detail-content" class="hidden flex-col gap-6 animate-fade-in pb-8">
                 <div class="flex flex-col border-b border-slate-200 pb-4">
-                    <h1 id="detail-title" class="text-xl md:text-2xl font-bold text-slate-800"></h1>
-                    <p id="detail-subtitle" class="text-sm text-slate-500"></p>
+                    <h1 id="detail-title" class="text-xl md:text-3xl font-bold text-slate-800 break-words leading-tight"></h1>
+                    <p id="detail-subtitle" class="text-sm text-slate-500 mt-1"></p>
                 </div>
 
                 <!-- Tabla 2026 -->
                 <div class="bg-white rounded-xl shadow-sm border border-blue-200 ring-2 ring-blue-50 overflow-hidden">
-                    <div class="bg-blue-50 px-6 py-3 border-b border-blue-100 flex justify-between items-center sticky top-0 z-20">
+                    <div class="bg-blue-50 px-4 md:px-6 py-3 border-b border-blue-100 flex flex-wrap justify-between items-center sticky top-0 z-20 gap-2">
                         <div class="flex items-center gap-3">
                             <h3 class="font-bold text-blue-900 text-sm"><span data-i18n="fact_2026">Facturación 2026</span></h3>
-                            <!-- BOTÓN VER FACTURAS 2026 -->
-                            <button onclick="openInvoiceModal(2026)" class="text-[10px] bg-white border border-blue-300 hover:bg-blue-50 text-blue-700 px-2 py-1 rounded shadow-sm flex items-center transition-colors">
+                            <button onclick="openInvoiceModal(2026)" class="text-[10px] bg-white border border-blue-300 hover:bg-blue-50 text-blue-700 px-2 py-1 rounded shadow-sm flex items-center transition-colors active:scale-95">
                                 <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                 <span data-i18n="btn_invoices">Ver Facturas</span>
                             </button>
@@ -155,11 +160,11 @@
                         <table class="w-full text-left text-sm relative">
                             <thead class="bg-white text-xs uppercase text-slate-500 border-b border-blue-50 sticky top-0 z-10 shadow-sm">
                                 <tr>
-                                    <th class="px-6 py-3 w-5/12 bg-white" data-i18n="col_prod">Producto</th>
-                                    <th class="px-6 py-3 text-right bg-white col-ene" data-i18n="col_jan">Enero</th>
-                                    <th class="px-6 py-3 text-right bg-white col-feb" data-i18n="col_feb">Febrero</th>
-                                    <th class="px-6 py-3 text-right bg-blue-50/50 font-bold text-blue-800" data-i18n="col_sum_2026">Total 2026</th>
-                                    <th class="px-6 py-3 text-right bg-white font-bold w-24" data-i18n="col_growth">% Crec.</th>
+                                    <th class="px-4 md:px-6 py-3 w-5/12 bg-white" data-i18n="col_prod">Producto</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-white col-ene hidden md:table-cell" data-i18n="col_jan">Enero</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-white col-feb hidden md:table-cell" data-i18n="col_feb">Febrero</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-blue-50/50 font-bold text-blue-800" data-i18n="col_sum_2026">Total 2026</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-white font-bold w-16 md:w-24" data-i18n="col_growth">% Crec.</th>
                                 </tr>
                             </thead>
                             <tbody id="tbody-2026" class="divide-y divide-blue-50"></tbody>
@@ -169,11 +174,10 @@
 
                 <!-- Tabla 2025 -->
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 px-6 py-3 border-b border-slate-200 flex justify-between items-center sticky top-0 z-20">
+                    <div class="bg-slate-50 px-4 md:px-6 py-3 border-b border-slate-200 flex flex-wrap justify-between items-center sticky top-0 z-20 gap-2">
                         <div class="flex items-center gap-3">
                             <h3 class="font-bold text-slate-700 text-sm"><span data-i18n="fact_2025">Facturación 2025</span></h3>
-                            <!-- BOTÓN VER FACTURAS 2025 -->
-                            <button onclick="openInvoiceModal(2025)" class="text-[10px] bg-white border border-slate-300 hover:bg-slate-100 text-slate-600 px-2 py-1 rounded shadow-sm flex items-center transition-colors">
+                            <button onclick="openInvoiceModal(2025)" class="text-[10px] bg-white border border-slate-300 hover:bg-slate-100 text-slate-600 px-2 py-1 rounded shadow-sm flex items-center transition-colors active:scale-95">
                                 <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                 <span data-i18n="btn_invoices">Ver Facturas</span>
                             </button>
@@ -184,11 +188,11 @@
                         <table class="w-full text-left text-sm relative">
                             <thead class="bg-white text-xs uppercase text-slate-500 border-b border-slate-100 sticky top-0 z-10 shadow-sm">
                                 <tr>
-                                    <th class="px-6 py-3 w-5/12 bg-white" data-i18n="col_prod">Producto</th>
-                                    <th class="px-6 py-3 text-right bg-white col-ene" data-i18n="col_jan">Enero</th>
-                                    <th class="px-6 py-3 text-right bg-white col-feb" data-i18n="col_feb">Febrero</th>
-                                    <th class="px-6 py-3 text-right bg-slate-50 font-bold" data-i18n="col_sum_2025">Total 2025</th>
-                                    <th class="px-6 py-3 text-right bg-white w-24"></th>
+                                    <th class="px-4 md:px-6 py-3 w-5/12 bg-white" data-i18n="col_prod">Producto</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-white col-ene hidden md:table-cell" data-i18n="col_jan">Enero</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-white col-feb hidden md:table-cell" data-i18n="col_feb">Febrero</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-slate-50 font-bold" data-i18n="col_sum_2025">Total 2025</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-white w-16 md:w-24"></th>
                                 </tr>
                             </thead>
                             <tbody id="tbody-2025" class="divide-y divide-slate-100"></tbody>
@@ -238,7 +242,8 @@
                 btn_invoices: "Ver Facturas",
                 modal_title_prefix: "Facturas",
                 th_invoice: "# Factura",
-                th_amount: "Monto"
+                th_amount: "Monto",
+                back_list: "Volver a la lista"
             },
             fr: {
                 dashboard_title: "Tableau de Bord Commercial",
@@ -275,7 +280,8 @@
                 btn_invoices: "Voir Factures",
                 modal_title_prefix: "Factures",
                 th_invoice: "# Facture",
-                th_amount: "Montant"
+                th_amount: "Montant",
+                back_list: "Retour à la liste"
             }
         };
 
@@ -331,8 +337,6 @@
                 document.getElementById('status-text').textContent = "Modo Demo Activado (Verifica conexión)";
             } finally {
                 document.getElementById('list-loader').classList.add('hidden');
-                
-                // DETECCIÓN DE IDIOMA AUTOMÁTICA
                 const userLang = navigator.language || navigator.userLanguage;
                 if (userLang.toLowerCase().startsWith('fr')) {
                     changeLanguage('fr');
@@ -347,11 +351,11 @@
             const btnFeb = document.getElementById('tab-february');
             const btnBim = document.getElementById('tab-bimester');
             if (mode === 'february') {
-                btnFeb.className = "flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active";
-                btnBim.className = "flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive";
+                btnFeb.className = "flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active touch-manipulation";
+                btnBim.className = "flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive touch-manipulation";
             } else {
-                btnFeb.className = "flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive";
-                btnBim.className = "flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active";
+                btnFeb.className = "flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive touch-manipulation";
+                btnBim.className = "flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active touch-manipulation";
             }
             document.querySelectorAll('.header-year-2025').forEach(el => el.textContent = mode === 'bimester' ? t('col_total_2025') : t('col_feb_2025'));
             document.querySelectorAll('.header-year-2026').forEach(el => el.textContent = mode === 'bimester' ? t('col_total_2026') : t('col_feb_2026'));
@@ -419,10 +423,10 @@
             items.forEach(item => {
                 const el = document.createElement('div');
                 const isSelected = item.id === state.selectedId;
-                let baseClass = "grid grid-cols-12 px-4 py-3 border-b border-slate-50 cursor-pointer transition-all duration-200 items-start relative group ";
+                let baseClass = "grid grid-cols-12 px-4 py-4 md:py-3 border-b border-slate-50 cursor-pointer transition-all duration-200 items-start relative group ";
                 if (isSelected) baseClass += "bg-blue-50/60 "; else baseClass += "hover:bg-slate-50 ";
                 el.className = baseClass;
-                el.onclick = () => { state.selectedId = item.id; updateUI(); renderDetail(item); };
+                el.onclick = () => { selectClient(item); };
                 let badge = '';
                 if (item.isNew) {
                     badge = `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] mt-1 font-bold bg-purple-100 text-purple-700 border border-purple-200">✨ ${t('badge_new')}</span>`;
@@ -437,6 +441,29 @@
             });
         }
 
+        function selectClient(item) {
+            state.selectedId = item.id;
+            updateUI(); // Refrescar lista para selección visual
+            renderDetail(item);
+            
+            // MOSTRAR DETALLE EN MÓVIL
+            if (window.innerWidth < 768) {
+                document.getElementById('left-panel').classList.add('hidden');
+                document.getElementById('detail-panel').classList.remove('hidden', 'md:flex');
+                document.getElementById('detail-panel').classList.add('flex');
+            }
+        }
+
+        window.backToMobileList = () => {
+            // OCULTAR DETALLE Y MOSTRAR LISTA
+            document.getElementById('left-panel').classList.remove('hidden');
+            document.getElementById('detail-panel').classList.add('hidden');
+            document.getElementById('detail-panel').classList.remove('flex');
+            // Limpiar selección para feedback visual
+            state.selectedId = null;
+            updateUI();
+        }
+
         function renderDetail(client) {
             document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('detail-content').classList.remove('hidden');
@@ -446,8 +473,10 @@
             document.getElementById('detail-subtitle').textContent = subText;
             document.getElementById('total-2025').textContent = `Total: ${formatCurrency(vals.v25)}`;
             document.getElementById('total-2026').textContent = `Total: ${formatCurrency(vals.v26)}`;
-            const displayEne = state.viewMode === 'bimester' ? 'table-cell' : 'none';
-            document.querySelectorAll('.col-ene').forEach(el => el.style.display = displayEne);
+            
+            // En móvil, podemos ocultar columnas de Ene/Feb si falta espacio, pero en desktop las mostramos
+            // Usamos clases CSS 'hidden md:table-cell' en HTML
+            
             renderDetailTable('tbody-2025', client.productos, 2025);
             renderDetailTable('tbody-2026', client.productos, 2026);
         }
@@ -484,12 +513,11 @@
                     } else if (p.total > 0) {
                         badge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-700 font-bold">${t('badge_new')}</span>`;
                     }
-                    growthCell = `<td class="px-6 py-3 text-right">${badge}</td>`;
+                    growthCell = `<td class="px-4 md:px-6 py-3 text-right">${badge}</td>`;
                 } else {
-                    growthCell = `<td class="px-6 py-3"></td>`;
+                    growthCell = `<td class="px-4 md:px-6 py-3"></td>`;
                 }
-                const displayEne = state.viewMode === 'bimester' ? '' : 'display:none;';
-                tr.innerHTML = `<td class="px-6 py-3 font-medium text-slate-700 break-words w-5/12 text-xs sm:text-sm">${p.nombre}</td><td class="px-6 py-3 text-right font-mono text-slate-500 text-xs" style="${displayEne}">${formatCurrency(p.ene)}</td><td class="px-6 py-3 text-right font-mono text-slate-500 text-xs">${formatCurrency(p.feb)}</td><td class="px-6 py-3 text-right font-mono font-bold text-slate-800 bg-slate-50/50 text-xs sm:text-sm">${formatCurrency(p.total)}</td>${growthCell}`;
+                tr.innerHTML = `<td class="px-4 md:px-6 py-3 font-medium text-slate-700 break-words w-5/12 text-xs sm:text-sm">${p.nombre}</td><td class="px-4 md:px-6 py-3 text-right font-mono text-slate-500 text-xs hidden md:table-cell">${formatCurrency(p.ene)}</td><td class="px-4 md:px-6 py-3 text-right font-mono text-slate-500 text-xs hidden md:table-cell">${formatCurrency(p.feb)}</td><td class="px-4 md:px-6 py-3 text-right font-mono font-bold text-slate-800 bg-slate-50/50 text-xs sm:text-sm">${formatCurrency(p.total)}</td>${growthCell}`;
                 tbody.appendChild(tr);
             });
         }
@@ -508,12 +536,9 @@
             const tbody = document.getElementById('modal-tbody');
             tbody.innerHTML = '';
 
-            // Filtrar facturas según año y vista
             const filteredInvoices = client.facturas.filter(f => {
                 if (f.anio !== year) return false;
-                // Si la vista es solo febrero, filtrar por mes (1 = Febrero)
                 if (state.viewMode === 'february' && f.mes !== 1) return false;
-                // Si es bimestre, acepta Ene(0) y Feb(1), que ya viene filtrado desde Apps Script
                 return true;
             });
 
@@ -526,8 +551,6 @@
                 document.getElementById('modal-count').textContent = "0 facturas";
             } else {
                 let total = 0;
-                // Agrupar visualmente por si hay duplicados de número
-                // Aunque el script backend ya agrupa, hacemos display limpio
                 filteredInvoices.sort((a,b) => b.monto - a.monto).forEach(f => {
                     total += f.monto;
                     const tr = document.createElement('tr');
@@ -549,7 +572,6 @@
             document.getElementById('invoice-modal').classList.add('hidden');
         };
 
-        // Cerrar modal con click fuera
         document.getElementById('invoice-modal').addEventListener('click', (e) => {
             if (e.target.id === 'invoice-modal') closeModal();
         });
