@@ -94,20 +94,23 @@
                         <button onclick="changeLanguage('fr')" id="lang-fr" class="lang-btn text-xs flex items-center gap-1"><span>FR</span> 🇫🇷</button>
                     </div>
                 </div>
+                
+                <!-- PESTAÑAS (ORDEN INVERTIDO: Febrero primero) -->
                 <div class="flex gap-3 mb-3">
-                    <button onclick="changeView('bimester')" id="tab-bimester" class="flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active">
-                        <span data-i18n="tab_bimester">1er Bimestre</span><br/><span class="font-normal opacity-80 text-[9px]" data-i18n="tab_bimester_sub">(Ene + Feb)</span>
-                    </button>
-                    <button onclick="changeView('february')" id="tab-february" class="flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive">
+                    <button onclick="changeView('february')" id="tab-february" class="flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active">
                         <span data-i18n="tab_feb">Solo Febrero</span><br/><span class="font-normal opacity-80 text-[9px]" data-i18n="tab_feb_sub">(Comparativo Mes)</span>
                     </button>
+                    <button onclick="changeView('bimester')" id="tab-bimester" class="flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive">
+                        <span data-i18n="tab_bimester">1er Bimestre</span><br/><span class="font-normal opacity-80 text-[9px]" data-i18n="tab_bimester_sub">(Ene + Feb)</span>
+                    </button>
                 </div>
+
                 <div class="relative mt-1">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
                     <input type="text" id="search-input" placeholder="Buscar cliente..." class="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all shadow-sm">
                 </div>
             </div>
-            <!-- ENCABEZADOS DE LISTA ACTUALIZADOS: 6cols para nombre, 3 para años -->
+            <!-- ENCABEZADOS DE LISTA -->
             <div class="grid grid-cols-12 px-4 py-2 bg-slate-100 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                 <div class="col-span-6 pl-1" data-i18n="col_client">Cliente</div>
                 <div class="col-span-3 text-right header-year-2025">2025</div>
@@ -135,7 +138,7 @@
                     <p id="detail-subtitle" class="text-sm text-slate-500"></p>
                 </div>
 
-                <!-- Tabla 2026 (AHORA PRIMERO) -->
+                <!-- Tabla 2026 -->
                 <div class="bg-white rounded-xl shadow-sm border border-blue-200 ring-2 ring-blue-50 overflow-hidden">
                     <div class="bg-blue-50 px-6 py-3 border-b border-blue-100 flex justify-between items-center sticky top-0 z-20">
                         <div class="flex items-center gap-3">
@@ -164,7 +167,7 @@
                     </div>
                 </div>
 
-                <!-- Tabla 2025 (AHORA SEGUNDO) -->
+                <!-- Tabla 2025 -->
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     <div class="bg-slate-50 px-6 py-3 border-b border-slate-200 flex justify-between items-center sticky top-0 z-20">
                         <div class="flex items-center gap-3">
@@ -283,7 +286,7 @@
             ]
         };
 
-        let state = { allData: [], selectedId: null, searchTerm: "", viewMode: 'bimester', isDemo: false, lang: 'es' };
+        let state = { allData: [], selectedId: null, searchTerm: "", viewMode: 'february', isDemo: false, lang: 'es' };
 
         function t(key) { return translations[state.lang][key] || key; }
 
@@ -328,20 +331,27 @@
                 document.getElementById('status-text').textContent = "Modo Demo Activado (Verifica conexión)";
             } finally {
                 document.getElementById('list-loader').classList.add('hidden');
-                updateUI();
+                
+                // DETECCIÓN DE IDIOMA AUTOMÁTICA
+                const userLang = navigator.language || navigator.userLanguage;
+                if (userLang.toLowerCase().startsWith('fr')) {
+                    changeLanguage('fr');
+                } else {
+                    changeLanguage('es');
+                }
             }
         }
 
         window.changeView = (mode) => {
             state.viewMode = mode;
-            const btnBim = document.getElementById('tab-bimester');
             const btnFeb = document.getElementById('tab-february');
-            if (mode === 'bimester') {
-                btnBim.className = "flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active";
-                btnFeb.className = "flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive";
-            } else {
-                btnBim.className = "flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive";
+            const btnBim = document.getElementById('tab-bimester');
+            if (mode === 'february') {
                 btnFeb.className = "flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active";
+                btnBim.className = "flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive";
+            } else {
+                btnFeb.className = "flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive";
+                btnBim.className = "flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active";
             }
             document.querySelectorAll('.header-year-2025').forEach(el => el.textContent = mode === 'bimester' ? t('col_total_2025') : t('col_feb_2025'));
             document.querySelectorAll('.header-year-2026').forEach(el => el.textContent = mode === 'bimester' ? t('col_total_2026') : t('col_feb_2026'));
