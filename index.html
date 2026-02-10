@@ -1,439 +1,553 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Loader2, Building2, Search, WifiOff, RefreshCw, ExternalLink, ArrowUpRight, ArrowDownRight, Minus, TrendingUp, TrendingDown, Activity } from 'lucide-react';
-
-// --- CONFIGURACIÓN ---
-// URL DE PRODUCCIÓN PROPORCIONADA
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzlhL86vAM7niocvLrwBQYT1xdG8Gns5WblTwEp8TAumkUPTVhKmPZSK8QXwzHhP_nd/exec";
-
-// --- DATOS DE RESPALDO (MOCK DATA) ---
-const MOCK_DATA = [
-  {
-    id: "mock1",
-    nombre: "TechSoluciones S.A. (Demo)",
-    ventas2025: 1250000,
-    ventas2026: 1850000,
-    productos: [
-      { nombre: "[LIC01] Licencias Software", v25_total: 500000, v25_ene: 200000, v25_feb: 300000, v26_total: 800000, v26_ene: 350000, v26_feb: 450000 },
-      { nombre: "[SRV02] Servicios Cloud", v25_total: 450000, v25_ene: 225000, v25_feb: 225000, v26_total: 750000, v26_ene: 300000, v26_feb: 450000 },
-    ]
-  },
-  {
-    id: "mock2",
-    nombre: "Distribuidora Norte (Demo)",
-    ventas2025: 2100000,
-    ventas2026: 1950000,
-    productos: [
-      { nombre: "[ELEC01] Electrónica", v25_total: 1200000, v25_ene: 600000, v25_feb: 600000, v26_total: 900000, v26_ene: 400000, v26_feb: 500000 },
-      { nombre: "[LB02] Línea Blanca", v25_total: 900000, v25_ene: 400000, v25_feb: 500000, v26_total: 1050000, v26_ene: 500000, v26_feb: 550000 },
-    ]
-  }
-];
-
-// --- UTILIDADES DE FORMATO ---
-const formatCurrency = (value) => {
-  if (value === undefined || value === null) return '$0.00';
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-};
-
-const formatPercent = (val) => {
-  if (!val || isNaN(val) || !isFinite(val)) return '-';
-  return `${val > 0 ? '+' : ''}${val.toFixed(1)}%`;
-};
-
-// --- COMPONENTE PRINCIPAL ---
-export default function App() {
-  const [dataRazonesSociales, setDataRazonesSociales] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isDemoMode, setIsDemoMode] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const noCacheUrl = `${GOOGLE_SCRIPT_URL}?t=${Date.now()}`;
-        console.log("Conectando a:", noCacheUrl);
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Comercial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        const response = await fetch(noCacheUrl, {
-          method: "GET",
-          redirect: "follow", 
-        });
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
         
-        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+        .tab-active { 
+            background-color: #1e3a8a; 
+            color: white; 
+            border: 2px solid #1e3a8a; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .tab-inactive { background-color: white; color: #64748b; border: 2px solid #cbd5e1; }
+        .tab-inactive:hover { background-color: #f1f5f9; color: #334155; border-color: #94a3b8; }
+
+        .lang-btn { opacity: 0.6; filter: grayscale(100%); transition: all 0.2s; }
+        .lang-btn.active { opacity: 1; filter: grayscale(0%); transform: scale(1.1); font-weight: bold; text-decoration: underline; text-decoration-color: #2563eb; text-underline-offset: 4px; }
         
-        const textData = await response.text();
-        if (textData.trim().startsWith("<!DOCTYPE") || textData.includes("google.com/accounts")) {
-           throw new Error("Acceso denegado. Abre el enlace 'Verificar API' manualmente.");
+        /* Modal Styles */
+        .modal-overlay { background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px); }
+    </style>
+</head>
+<body class="bg-slate-100 h-screen flex flex-col font-sans text-slate-800 overflow-hidden">
+
+    <!-- MODAL DE FACTURAS -->
+    <div id="invoice-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay p-4 animate-fade-in">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[80vh]">
+            <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span id="modal-title">Facturas</span>
+                    </h3>
+                    <p id="modal-subtitle" class="text-xs text-slate-500 mt-1"></p>
+                </div>
+                <button onclick="closeModal()" class="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-0">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-500 sticky top-0 border-b border-slate-200">
+                        <tr>
+                            <th class="px-6 py-3 font-semibold" data-i18n="th_invoice"># Factura</th>
+                            <th class="px-6 py-3 font-semibold text-right" data-i18n="th_amount">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-tbody" class="divide-y divide-slate-100 text-slate-700">
+                        <!-- Contenido dinámico -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="p-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex justify-between items-center">
+                <span class="text-xs text-slate-500" id="modal-count"></span>
+                <span class="text-sm font-bold text-slate-800" id="modal-total"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATUS BAR -->
+    <div id="status-bar" class="hidden px-4 py-2 text-xs font-medium flex justify-between items-center border-b shadow-sm z-40 bg-white">
+        <span id="status-text" class="flex items-center gap-2"></span>
+        <button onclick="window.location.reload()" class="underline ml-4">Recargar</button>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <!-- PANEL IZQUIERDO -->
+        <div class="w-5/12 md:w-1/3 bg-white border-r border-slate-200 flex flex-col shadow-xl z-20">
+            <div class="bg-slate-50 border-b border-slate-200 p-4 pb-2">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2 max-w-[70%] leading-tight" data-i18n="dashboard_title">
+                        <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        Dashboard Comercial
+                    </h2>
+                    <div class="flex gap-3 bg-white px-2 py-1 rounded-full border border-slate-200 shadow-sm">
+                        <button onclick="changeLanguage('es')" id="lang-es" class="lang-btn active text-xs flex items-center gap-1"><span>MX</span> 🇲🇽</button>
+                        <div class="w-px bg-slate-200 h-4 self-center"></div>
+                        <button onclick="changeLanguage('fr')" id="lang-fr" class="lang-btn text-xs flex items-center gap-1"><span>FR</span> 🇫🇷</button>
+                    </div>
+                </div>
+                <div class="flex gap-3 mb-3">
+                    <button onclick="changeView('bimester')" id="tab-bimester" class="flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active">
+                        <span data-i18n="tab_bimester">1er Bimestre</span><br/><span class="font-normal opacity-80 text-[9px]" data-i18n="tab_bimester_sub">(Ene + Feb)</span>
+                    </button>
+                    <button onclick="changeView('february')" id="tab-february" class="flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive">
+                        <span data-i18n="tab_feb">Solo Febrero</span><br/><span class="font-normal opacity-80 text-[9px]" data-i18n="tab_feb_sub">(Comparativo Mes)</span>
+                    </button>
+                </div>
+                <div class="relative mt-1">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
+                    <input type="text" id="search-input" placeholder="Buscar cliente..." class="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all shadow-sm">
+                </div>
+            </div>
+            <div class="grid grid-cols-12 px-4 py-2 bg-slate-100 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                <div class="col-span-4 pl-1" data-i18n="col_client">Cliente</div>
+                <div class="col-span-4 text-right header-year-2025">2025</div>
+                <div class="col-span-4 text-right header-year-2026">2026</div>
+            </div>
+            <div id="clients-list" class="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 relative">
+                <div id="list-loader" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
+                    <svg class="animate-spin h-8 w-8 text-blue-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span class="text-xs text-slate-500 animate-pulse" data-i18n="loading">Cargando datos...</span>
+                </div>
+            </div>
+            <div id="list-footer" class="p-2 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-400 text-center font-medium">0 Clientes listados</div>
+        </div>
+
+        <!-- PANEL DERECHO -->
+        <div id="detail-panel" class="w-7/12 md:w-2/3 flex flex-col h-full bg-slate-100 overflow-y-auto p-4 md:p-6 gap-6 custom-scrollbar">
+            <div id="empty-state" class="flex-1 flex flex-col items-center justify-center text-slate-400">
+                <svg class="w-16 h-16 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                <p data-i18n="empty_state">Selecciona un cliente para ver su desglose</p>
+            </div>
+            
+            <div id="detail-content" class="hidden flex-col gap-6 animate-fade-in">
+                <div class="flex flex-col border-b border-slate-200 pb-4">
+                    <h1 id="detail-title" class="text-xl md:text-2xl font-bold text-slate-800"></h1>
+                    <p id="detail-subtitle" class="text-sm text-slate-500"></p>
+                </div>
+
+                <!-- Tabla 2025 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 px-6 py-3 border-b border-slate-200 flex justify-between items-center sticky top-0 z-20">
+                        <div class="flex items-center gap-3">
+                            <h3 class="font-bold text-slate-700 text-sm"><span data-i18n="fact_2025">Facturación 2025</span></h3>
+                            <!-- BOTÓN VER FACTURAS 2025 -->
+                            <button onclick="openInvoiceModal(2025)" class="text-[10px] bg-white border border-slate-300 hover:bg-slate-100 text-slate-600 px-2 py-1 rounded shadow-sm flex items-center transition-colors">
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <span data-i18n="btn_invoices">Ver Facturas</span>
+                            </button>
+                        </div>
+                        <span id="total-2025" class="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded font-mono font-bold"></span>
+                    </div>
+                    <div class="overflow-auto max-h-[350px] custom-scrollbar">
+                        <table class="w-full text-left text-sm relative">
+                            <thead class="bg-white text-xs uppercase text-slate-500 border-b border-slate-100 sticky top-0 z-10 shadow-sm">
+                                <tr>
+                                    <th class="px-6 py-3 w-5/12 bg-white" data-i18n="col_prod">Producto</th>
+                                    <th class="px-6 py-3 text-right bg-white col-ene" data-i18n="col_jan">Enero</th>
+                                    <th class="px-6 py-3 text-right bg-white col-feb" data-i18n="col_feb">Febrero</th>
+                                    <th class="px-6 py-3 text-right bg-slate-50 font-bold" data-i18n="col_sum_2025">Total 2025</th>
+                                    <th class="px-6 py-3 text-right bg-white w-24"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-2025" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tabla 2026 -->
+                <div class="bg-white rounded-xl shadow-sm border border-blue-200 ring-2 ring-blue-50 overflow-hidden">
+                    <div class="bg-blue-50 px-6 py-3 border-b border-blue-100 flex justify-between items-center sticky top-0 z-20">
+                        <div class="flex items-center gap-3">
+                            <h3 class="font-bold text-blue-900 text-sm"><span data-i18n="fact_2026">Facturación 2026</span></h3>
+                            <!-- BOTÓN VER FACTURAS 2026 -->
+                            <button onclick="openInvoiceModal(2026)" class="text-[10px] bg-white border border-blue-300 hover:bg-blue-50 text-blue-700 px-2 py-1 rounded shadow-sm flex items-center transition-colors">
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <span data-i18n="btn_invoices">Ver Facturas</span>
+                            </button>
+                        </div>
+                        <span id="total-2026" class="bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded font-mono font-bold"></span>
+                    </div>
+                    <div class="overflow-auto max-h-[350px] custom-scrollbar">
+                        <table class="w-full text-left text-sm relative">
+                            <thead class="bg-white text-xs uppercase text-slate-500 border-b border-blue-50 sticky top-0 z-10 shadow-sm">
+                                <tr>
+                                    <th class="px-6 py-3 w-5/12 bg-white" data-i18n="col_prod">Producto</th>
+                                    <th class="px-6 py-3 text-right bg-white col-ene" data-i18n="col_jan">Enero</th>
+                                    <th class="px-6 py-3 text-right bg-white col-feb" data-i18n="col_feb">Febrero</th>
+                                    <th class="px-6 py-3 text-right bg-blue-50/50 font-bold text-blue-800" data-i18n="col_sum_2026">Total 2026</th>
+                                    <th class="px-6 py-3 text-right bg-white font-bold w-24" data-i18n="col_growth">% Crec.</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-2026" class="divide-y divide-blue-50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LÓGICA DE NEGOCIO -->
+    <script>
+        const translations = {
+            es: {
+                dashboard_title: "Dashboard Comercial",
+                tab_bimester: "1er Bimestre",
+                tab_bimester_sub: "(Ene + Feb)",
+                tab_feb: "Solo Febrero",
+                tab_feb_sub: "(Comparativo Mes)",
+                search_placeholder: "Buscar cliente...",
+                col_client: "Cliente",
+                col_total_2025: "Total 2025",
+                col_total_2026: "Total 2026",
+                col_feb_2025: "Feb 2025",
+                col_feb_2026: "Feb 2026",
+                loading: "Cargando datos...",
+                footer_listed: "Clientes listados",
+                empty_state: "Selecciona un cliente para ver su desglose",
+                detail_subtitle_bim: "Comparativo Primer Bimestre (Ene + Feb)",
+                detail_subtitle_feb: "Comparativo Mensual (Febrero)",
+                fact_2025: "Facturación 2025",
+                fact_2026: "Facturación 2026",
+                col_prod: "Producto",
+                col_jan: "Enero",
+                col_feb: "Febrero",
+                col_sum_2025: "Total 2025",
+                col_sum_2026: "Total 2026",
+                col_growth: "% Crec.",
+                group_new: "🌟 Clientes Nuevos",
+                group_high: "Crecimiento > 10%",
+                group_stable: "Estables (0% - 10%)",
+                group_neg: "Decrecimiento",
+                badge_new: "NUEVO",
+                no_records: "Sin registros en este periodo",
+                no_records_year: "Sin registros en",
+                btn_invoices: "Ver Facturas",
+                modal_title_prefix: "Facturas",
+                th_invoice: "# Factura",
+                th_amount: "Monto"
+            },
+            fr: {
+                dashboard_title: "Tableau de Bord Commercial",
+                tab_bimester: "1er Bimestre",
+                tab_bimester_sub: "(Jan + Fév)",
+                tab_feb: "Février Uniq.",
+                tab_feb_sub: "(Comparatif Mois)",
+                search_placeholder: "Rechercher client...",
+                col_client: "Client",
+                col_total_2025: "Total 2025",
+                col_total_2026: "Total 2026",
+                col_feb_2025: "Fév 2025",
+                col_feb_2026: "Fév 2026",
+                loading: "Chargement des données...",
+                footer_listed: "Clients listés",
+                empty_state: "Sélectionnez un client pour voir les détails",
+                detail_subtitle_bim: "Comparatif 1er Bimestre (Jan + Fév)",
+                detail_subtitle_feb: "Comparatif Mensuel (Février)",
+                fact_2025: "Facturation 2025",
+                fact_2026: "Facturation 2026",
+                col_prod: "Produit",
+                col_jan: "Janvier",
+                col_feb: "Février",
+                col_sum_2025: "Total",
+                col_sum_2026: "Total",
+                col_growth: "% Crois.",
+                group_new: "🌟 Nouveaux Clients",
+                group_high: "Croissance > 10%",
+                group_stable: "Stables (0% - 10%)",
+                group_neg: "Décroissance",
+                badge_new: "NOUVEAU",
+                no_records: "Aucun enregistrement pour cette période",
+                no_records_year: "Aucun enregistrement en",
+                btn_invoices: "Voir Factures",
+                modal_title_prefix: "Factures",
+                th_invoice: "# Facture",
+                th_amount: "Montant"
+            }
+        };
+
+        const CONFIG = {
+            API_URL: "https://script.google.com/macros/s/AKfycbzlhL86vAM7niocvLrwBQYT1xdG8Gns5WblTwEp8TAumkUPTVhKmPZSK8QXwzHhP_nd/exec",
+            MOCK_DATA: [
+                { id: "m1", nombre: "Cliente Ejemplo 1", ventas2025: 100, ventas2026: 200, productos: [], facturas: [] }
+            ]
+        };
+
+        let state = { allData: [], selectedId: null, searchTerm: "", viewMode: 'bimester', isDemo: false, lang: 'es' };
+
+        function t(key) { return translations[state.lang][key] || key; }
+
+        window.changeLanguage = (lang) => {
+            state.lang = lang;
+            document.getElementById('lang-es').classList.toggle('active', lang === 'es');
+            document.getElementById('lang-fr').classList.toggle('active', lang === 'fr');
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.textContent = t(key);
+            });
+            document.getElementById('search-input').placeholder = t('search_placeholder');
+            changeView(state.viewMode);
+        };
+
+        const formatCurrency = (val) => {
+            if (val === undefined || val === null) return '$0.00';
+            return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
+        };
+
+        const formatPercent = (val) => {
+            if (!val || isNaN(val) || !isFinite(val)) return '-';
+            const sign = val > 0 ? '+' : '';
+            return `${sign}${val.toFixed(1)}%`;
+        };
+
+        async function initApp() {
+            try {
+                const url = `${CONFIG.API_URL}?t=${Date.now()}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Error de red");
+                const text = await response.text();
+                if (text.includes("<!DOCTYPE")) throw new Error("Acceso denegado (HTML response)");
+                
+                state.allData = JSON.parse(text);
+                state.isDemo = false;
+            } catch (err) {
+                console.warn("Modo demo activo:", err);
+                state.allData = CONFIG.MOCK_DATA;
+                state.isDemo = true;
+                document.getElementById('status-bar').classList.remove('hidden');
+                document.getElementById('status-text').textContent = "Modo Demo Activado (Verifica conexión)";
+            } finally {
+                document.getElementById('list-loader').classList.add('hidden');
+                updateUI();
+            }
         }
 
-        const jsonData = JSON.parse(textData);
-        // Inicialmente no ordenamos aquí, lo haremos en el useMemo de grupos
-        setDataRazonesSociales(jsonData);
-        
-        // Seleccionamos el primero por defecto (basado en lógica de ordenamiento posterior)
-        // Para simplificar, seleccionamos el primero que venga en la data cruda, luego el usuario cambia
-        if (jsonData.length > 0) setSelectedId(jsonData[0].id);
-        
-        setIsDemoMode(false);
-        setError(null);
+        window.changeView = (mode) => {
+            state.viewMode = mode;
+            const btnBim = document.getElementById('tab-bimester');
+            const btnFeb = document.getElementById('tab-february');
+            if (mode === 'bimester') {
+                btnBim.className = "flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active";
+                btnFeb.className = "flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive";
+            } else {
+                btnBim.className = "flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive";
+                btnFeb.className = "flex-1 py-2 px-2 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active";
+            }
+            document.querySelectorAll('.header-year-2025').forEach(el => el.textContent = mode === 'bimester' ? t('col_total_2025') : t('col_feb_2025'));
+            document.querySelectorAll('.header-year-2026').forEach(el => el.textContent = mode === 'bimester' ? t('col_total_2026') : t('col_feb_2026'));
+            updateUI();
+            if (state.selectedId) {
+                const client = state.allData.find(c => c.id === state.selectedId);
+                if (client) renderDetail(client);
+            }
+        };
 
-      } catch (err) {
-        console.warn("Usando modo demo:", err.message);
-        setDataRazonesSociales(MOCK_DATA);
-        setSelectedId(MOCK_DATA[0].id);
-        setIsDemoMode(true);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+        function getClientValues(client) {
+            if (state.viewMode === 'bimester') {
+                return { v25: client.ventas2025, v26: client.ventas2026 };
+            } else {
+                const v25 = client.productos.reduce((sum, p) => sum + (p.v25_feb || 0), 0);
+                const v26 = client.productos.reduce((sum, p) => sum + (p.v26_feb || 0), 0);
+                return { v25, v26 };
+            }
+        }
 
-    fetchData();
-  }, []);
+        function updateUI() {
+            const processed = state.allData
+                .filter(c => c.nombre.toLowerCase().includes(state.searchTerm.toLowerCase()))
+                .map(c => {
+                    const vals = getClientValues(c);
+                    let growth = 0;
+                    let isNew = false;
 
-  // Lógica de Agrupación y Ordenamiento
-  const groupedCompanies = useMemo(() => {
-    // 1. Filtrar por búsqueda
-    const filtered = dataRazonesSociales.filter(c => 
-      c.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+                    if (vals.v25 > 0) {
+                        growth = ((vals.v26 - vals.v25) / vals.v25) * 100;
+                    } else if (vals.v26 > 0) {
+                        growth = 100;
+                        isNew = true;
+                    } else if (vals.v25 > 0 && vals.v26 === 0) {
+                        growth = -100;
+                    }
 
-    // 2. Calcular crecimiento para cada empresa
-    const withGrowth = filtered.map(c => {
-      let growth = 0;
-      if (c.ventas2025 > 0) {
-        growth = ((c.ventas2026 - c.ventas2025) / c.ventas2025) * 100;
-      } else if (c.ventas2026 > 0) {
-        growth = 100; // Cliente nuevo
-      } else if (c.ventas2025 > 0 && c.ventas2026 === 0) {
-        growth = -100; // Cliente perdido
-      }
-      return { ...c, growth };
-    });
+                    return { ...c, vals, growth, isNew };
+                });
 
-    // 3. Separar en grupos
-    const highGrowth = []; // > 10%
-    const stableGrowth = []; // 0% a 10%
-    const negativeGrowth = []; // < 0%
+            const newClients = processed.filter(c => c.isNew).sort((a,b) => b.vals.v26 - a.vals.v26);
+            const highGrowth = processed.filter(c => !c.isNew && c.growth > 10).sort((a,b) => a.nombre.localeCompare(b.nombre));
+            const stableGrowth = processed.filter(c => !c.isNew && c.growth >= 0 && c.growth <= 10).sort((a,b) => a.nombre.localeCompare(b.nombre));
+            const negativeGrowth = processed.filter(c => !c.isNew && c.growth < 0).sort((a,b) => a.growth - b.growth);
 
-    withGrowth.forEach(c => {
-      if (c.growth > 10) {
-        highGrowth.push(c);
-      } else if (c.growth >= 0) {
-        stableGrowth.push(c);
-      } else {
-        negativeGrowth.push(c);
-      }
-    });
+            const container = document.getElementById('clients-list');
+            Array.from(container.children).forEach(child => {
+                if (child.id !== 'list-loader') container.removeChild(child);
+            });
 
-    // 4. Ordenar cada grupo
-    // Positivos: Alfabético
-    highGrowth.sort((a, b) => a.nombre.localeCompare(b.nombre));
-    stableGrowth.sort((a, b) => a.nombre.localeCompare(b.nombre));
-    
-    // Negativos: Por desempeño (los más bajos primero, ej: -80% antes que -5%)
-    negativeGrowth.sort((a, b) => a.growth - b.growth);
+            renderGroup(container, newClients, t('group_new'), "text-purple-700 bg-purple-50 border-purple-100");
+            renderGroup(container, highGrowth, t('group_high'), "text-green-700 bg-green-50 border-green-100");
+            renderGroup(container, stableGrowth, t('group_stable'), "text-blue-700 bg-blue-50 border-blue-100");
+            renderGroup(container, negativeGrowth, t('group_neg'), "text-red-700 bg-red-50 border-red-100");
 
-    return { highGrowth, stableGrowth, negativeGrowth, totalCount: filtered.length };
-  }, [dataRazonesSociales, searchTerm]);
+            document.getElementById('list-footer').textContent = `${processed.length} ${t('footer_listed')}`;
+        }
 
-  const selectedCompany = useMemo(() => 
-    dataRazonesSociales.find(c => c.id === selectedId), 
-  [selectedId, dataRazonesSociales]);
+        function renderGroup(container, items, title, classes) {
+            if (items.length === 0) return;
+            const header = document.createElement('div');
+            header.className = `sticky top-0 z-10 px-4 py-1.5 border-y text-[10px] font-bold uppercase tracking-wide flex items-center justify-between backdrop-blur-sm bg-opacity-95 ${classes}`;
+            header.innerHTML = `<span>${title}</span><span class="bg-white/50 px-1.5 rounded-full">${items.length}</span>`;
+            container.appendChild(header);
+            items.forEach(item => {
+                const el = document.createElement('div');
+                const isSelected = item.id === state.selectedId;
+                let baseClass = "grid grid-cols-12 px-4 py-3 border-b border-slate-50 cursor-pointer transition-all duration-200 items-start relative group ";
+                if (isSelected) baseClass += "bg-blue-50/60 "; else baseClass += "hover:bg-slate-50 ";
+                el.className = baseClass;
+                el.onclick = () => { state.selectedId = item.id; updateUI(); renderDetail(item); };
+                let badge = '';
+                if (item.isNew) {
+                    badge = `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] mt-1 font-bold bg-purple-100 text-purple-700 border border-purple-200">✨ ${t('badge_new')}</span>`;
+                } else if (item.vals.v25 > 0 || item.vals.v26 > 0) {
+                    const color = item.growth >= 0 ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200';
+                    const icon = item.growth >= 0 ? '▲' : '▼';
+                    badge = `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] mt-1 font-medium border ${color}">${icon} ${Math.abs(item.growth).toFixed(1)}%</span>`;
+                }
+                const activeBorder = isSelected ? '<div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r"></div>' : '';
+                el.innerHTML = `${activeBorder}<div class="col-span-4 pr-2 pl-2"><p class="text-xs font-bold truncate ${isSelected ? 'text-blue-700' : 'text-slate-700'}">${item.nombre}</p>${badge}</div><div class="col-span-4 text-right text-[10px] sm:text-xs text-slate-500 font-medium font-mono truncate pt-0.5">${formatCurrency(item.vals.v25)}</div><div class="col-span-4 text-right text-[10px] sm:text-xs font-bold font-mono truncate pt-0.5 ${item.vals.v26 >= item.vals.v25 ? 'text-slate-800' : 'text-red-600'}">${formatCurrency(item.vals.v26)}</div>`;
+                container.appendChild(el);
+            });
+        }
 
-  // Helper para obtener datos seguros
-  const getProductData = (prod, year, month) => {
-    if (year === 2026) {
-      if (month === 'ene') return prod.v26_ene !== undefined ? prod.v26_ene : 0;
-      if (month === 'feb') return prod.v26_feb !== undefined ? prod.v26_feb : 0;
-      return prod.v26_total !== undefined ? prod.v26_total : (prod.v26 || 0);
-    } else {
-      if (month === 'ene') return prod.v25_ene !== undefined ? prod.v25_ene : 0;
-      if (month === 'feb') return prod.v25_feb !== undefined ? prod.v25_feb : 0;
-      return prod.v25_total !== undefined ? prod.v25_total : (prod.v25 || 0);
-    }
-  };
+        function renderDetail(client) {
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('detail-content').classList.remove('hidden');
+            const vals = getClientValues(client);
+            document.getElementById('detail-title').textContent = client.nombre;
+            const subText = state.viewMode === 'bimester' ? t('detail_subtitle_bim') : t('detail_subtitle_feb');
+            document.getElementById('detail-subtitle').textContent = subText;
+            document.getElementById('total-2025').textContent = `Total: ${formatCurrency(vals.v25)}`;
+            document.getElementById('total-2026').textContent = `Total: ${formatCurrency(vals.v26)}`;
+            const displayEne = state.viewMode === 'bimester' ? 'table-cell' : 'none';
+            document.querySelectorAll('.col-ene').forEach(el => el.style.display = displayEne);
+            renderDetailTable('tbody-2025', client.productos, 2025);
+            renderDetailTable('tbody-2026', client.productos, 2026);
+        }
 
-  const renderCompanyRow = (company) => {
-    const isSelected = company.id === selectedId;
-    const growth = company.growth;
-    const hasGrowth = company.ventas2025 > 0 || company.ventas2026 > 0;
+        function renderDetailTable(tbodyId, products, year) {
+            const tbody = document.getElementById(tbodyId);
+            tbody.innerHTML = '';
+            const items = products.map(p => {
+                const prefix = year === 2026 ? 'v26' : 'v25';
+                const ene = p[`${prefix}_ene`] || 0;
+                const feb = p[`${prefix}_feb`] || 0;
+                const total = state.viewMode === 'bimester' ? (p[`${prefix}_total`] || (ene+feb)) : feb;
+                return { ...p, ene, feb, total };
+            }).filter(p => p.total > 0).sort((a,b) => b.total - a.total);
 
-    return (
-      <div 
-        key={company.id}
-        onClick={() => setSelectedId(company.id)}
-        className={`grid grid-cols-12 px-4 py-3 border-b border-slate-50 cursor-pointer transition-all duration-200 items-start hover:bg-slate-50 relative group
-          ${isSelected ? 'bg-blue-50/60' : ''}
-        `}
-      >
-        {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r"></div>}
-        
-        <div className="col-span-4 pr-2 pl-2">
-          <p className={`text-xs font-bold truncate ${isSelected ? 'text-blue-700' : 'text-slate-700'}`}>
-            {company.nombre}
-          </p>
-          {/* BADGE DE CRECIMIENTO */}
-          {hasGrowth && (
-              <div className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] mt-1 font-medium border ${growth >= 0 ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
-                  {growth >= 0 ? <ArrowUpRight size={8} className="mr-0.5"/> : <ArrowDownRight size={8} className="mr-0.5"/>}
-                  {growth >= 0 ? '+' : ''}{growth.toFixed(1)}%
-              </div>
-          )}
-        </div>
-        {/* CIFRAS COMPLETAS */}
-        <div className="col-span-4 text-right text-[10px] sm:text-xs text-slate-500 font-medium font-mono truncate pt-0.5">
-          {formatCurrency(company.ventas2025)}
-        </div>
-        <div className={`col-span-4 text-right text-[10px] sm:text-xs font-bold font-mono truncate pt-0.5 ${company.ventas2026 >= company.ventas2025 ? 'text-slate-800' : 'text-red-600'}`}>
-          {formatCurrency(company.ventas2026)}
-        </div>
-      </div>
-    );
-  };
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-slate-400 italic">${t('no_records_year')} ${year}</td></tr>`;
+                return;
+            }
 
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-slate-50 flex-col gap-4 font-sans">
-        <Loader2 className="animate-spin text-blue-600" size={48} />
-        <p className="text-slate-500 font-medium animate-pulse">Cargando datos...</p>
-      </div>
-    );
-  }
+            items.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 group border-b border-slate-50 last:border-0";
+                let growthCell = '';
+                if (year === 2026) {
+                    const p25 = getProductData(p, 2025);
+                    const base25 = state.viewMode === 'bimester' ? p25.total : p25.feb;
+                    let badge = '<span class="text-slate-300 text-xs">-</span>';
+                    if (base25 > 0) {
+                        const pct = ((p.total - base25) / base25) * 100;
+                        const color = pct >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+                        const icon = pct >= 0 ? '▲' : '▼';
+                        badge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs ${color} font-bold">${icon} ${Math.abs(pct).toFixed(1)}%</span>`;
+                    } else if (p.total > 0) {
+                        badge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-700 font-bold">${t('badge_new')}</span>`;
+                    }
+                    growthCell = `<td class="px-6 py-3 text-right">${badge}</td>`;
+                } else {
+                    growthCell = `<td class="px-6 py-3"></td>`;
+                }
+                const displayEne = state.viewMode === 'bimester' ? '' : 'display:none;';
+                tr.innerHTML = `<td class="px-6 py-3 font-medium text-slate-700 break-words w-5/12 text-xs sm:text-sm">${p.nombre}</td><td class="px-6 py-3 text-right font-mono text-slate-500 text-xs" style="${displayEne}">${formatCurrency(p.ene)}</td><td class="px-6 py-3 text-right font-mono text-slate-500 text-xs">${formatCurrency(p.feb)}</td><td class="px-6 py-3 text-right font-mono font-bold text-slate-800 bg-slate-50/50 text-xs sm:text-sm">${formatCurrency(p.total)}</td>${growthCell}`;
+                tbody.appendChild(tr);
+            });
+        }
 
-  return (
-    <div className="flex h-screen bg-slate-100 font-sans overflow-hidden flex-col">
-      
-      {/* Aviso Demo */}
-      {isDemoMode && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between text-xs text-amber-900 shadow-sm z-50">
-          <div className="flex items-center gap-2">
-            <WifiOff size={14} className="text-amber-600" />
-            <span>Modo Demo: {error} (Actualiza tu script)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <a href={GOOGLE_SCRIPT_URL} target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-700">Verificar API</a>
-            <button onClick={() => window.location.reload()} className="bg-white px-2 py-0.5 rounded border border-amber-200">Reintentar</button>
-          </div>
-        </div>
-      )}
+        function getProductData(rawProd, year) {
+            const y = year === 2026 ? 'v26' : 'v25';
+            return { ene: rawProd[`${y}_ene`] || 0, feb: rawProd[`${y}_feb`] || 0, total: rawProd[`${y}_total`] || 0 };
+        }
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* --- MENÚ LATERAL (LISTA DE CLIENTES) --- */}
-        <div className="w-5/12 md:w-1/3 bg-white border-r border-slate-200 flex flex-col shadow-xl z-10">
-          <div className="p-4 border-b border-slate-200 bg-slate-50">
-            <h2 className="text-sm font-bold text-slate-800 mb-2 uppercase tracking-wide">Lista de Clientes</h2>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={14} />
-              <input 
-                type="text" 
-                placeholder="Buscar cliente..." 
-                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-all"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-12 px-4 py-2 bg-slate-100 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-            <div className="col-span-4 pl-1">Cliente</div>
-            <div className="col-span-4 text-right">2025 Total</div>
-            <div className="col-span-4 text-right">2026 Total</div>
-          </div>
+        // --- LÓGICA DE MODAL DE FACTURAS ---
+        window.openInvoiceModal = (year) => {
+            const client = state.allData.find(c => c.id === state.selectedId);
+            if (!client || !client.facturas) return;
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50">
-            
-            {/* SECCIÓN 1: CRECIMIENTO ALTO (>10%) */}
-            {groupedCompanies.highGrowth.length > 0 && (
-              <>
-                <div className="sticky top-0 z-10 bg-green-50/90 backdrop-blur-sm px-4 py-1.5 border-y border-green-100 text-[10px] font-bold text-green-700 uppercase tracking-wide flex items-center">
-                  <TrendingUp size={12} className="mr-1.5" />
-                  Crecimiento Mayor al 10%
-                  <span className="ml-auto bg-green-200 text-green-800 px-1.5 rounded-full text-[9px]">{groupedCompanies.highGrowth.length}</span>
-                </div>
-                {groupedCompanies.highGrowth.map(renderCompanyRow)}
-              </>
-            )}
+            const modal = document.getElementById('invoice-modal');
+            const tbody = document.getElementById('modal-tbody');
+            tbody.innerHTML = '';
 
-            {/* SECCIÓN 2: CRECIMIENTO ESTABLE (0% - 10%) */}
-            {groupedCompanies.stableGrowth.length > 0 && (
-              <>
-                <div className="sticky top-0 z-10 bg-blue-50/90 backdrop-blur-sm px-4 py-1.5 border-y border-blue-100 text-[10px] font-bold text-blue-700 uppercase tracking-wide flex items-center">
-                  <Activity size={12} className="mr-1.5" />
-                  Crecimiento Estable (0% - 10%)
-                  <span className="ml-auto bg-blue-200 text-blue-800 px-1.5 rounded-full text-[9px]">{groupedCompanies.stableGrowth.length}</span>
-                </div>
-                {groupedCompanies.stableGrowth.map(renderCompanyRow)}
-              </>
-            )}
+            // Filtrar facturas según año y vista
+            const filteredInvoices = client.facturas.filter(f => {
+                if (f.anio !== year) return false;
+                // Si la vista es solo febrero, filtrar por mes (1 = Febrero)
+                if (state.viewMode === 'february' && f.mes !== 1) return false;
+                // Si es bimestre, acepta Ene(0) y Feb(1), que ya viene filtrado desde Apps Script
+                return true;
+            });
 
-            {/* SECCIÓN 3: DECRECIMIENTO (Negativos) */}
-            {groupedCompanies.negativeGrowth.length > 0 && (
-              <>
-                <div className="sticky top-0 z-10 bg-red-50/90 backdrop-blur-sm px-4 py-1.5 border-y border-red-100 text-[10px] font-bold text-red-700 uppercase tracking-wide flex items-center">
-                  <TrendingDown size={12} className="mr-1.5" />
-                  Decrecimiento
-                  <span className="ml-auto bg-red-200 text-red-800 px-1.5 rounded-full text-[9px]">{groupedCompanies.negativeGrowth.length}</span>
-                </div>
-                {groupedCompanies.negativeGrowth.map(renderCompanyRow)}
-              </>
-            )}
+            document.getElementById('modal-title').textContent = `${t('modal_title_prefix')} ${year}`;
+            document.getElementById('modal-subtitle').textContent = state.viewMode === 'bimester' ? t('tab_bimester') : t('tab_feb');
 
-            {groupedCompanies.totalCount === 0 && (
-               <div className="p-8 text-center flex flex-col items-center justify-center">
-                 <Search className="text-slate-300 mb-2" size={32}/>
-                 <p className="text-slate-400 text-sm">No se encontraron resultados</p>
-               </div>
-            )}
-          </div>
-          
-          <div className="p-2 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-400 text-center">
-            {groupedCompanies.totalCount} Clientes listados
-          </div>
-        </div>
+            if (filteredInvoices.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="2" class="px-6 py-8 text-center text-slate-400 italic">${t('no_records')}</td></tr>`;
+                document.getElementById('modal-total').textContent = formatCurrency(0);
+                document.getElementById('modal-count').textContent = "0 facturas";
+            } else {
+                let total = 0;
+                // Agrupar visualmente por si hay duplicados de número
+                // Aunque el script backend ya agrupa, hacemos display limpio
+                filteredInvoices.sort((a,b) => b.monto - a.monto).forEach(f => {
+                    total += f.monto;
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 border-b border-slate-50";
+                    tr.innerHTML = `
+                        <td class="px-6 py-3 font-mono text-xs text-blue-600 font-bold">${f.numero}</td>
+                        <td class="px-6 py-3 text-right font-mono text-slate-700">${formatCurrency(f.monto)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                document.getElementById('modal-total').textContent = formatCurrency(total);
+                document.getElementById('modal-count').textContent = `${filteredInvoices.length} facturas`;
+            }
 
-        {/* --- PANTALLA DERECHA (DETALLE DESGLOSADO) --- */}
-        <div className="w-7/12 md:w-2/3 flex flex-col h-full bg-slate-100 overflow-y-auto p-4 md:p-6 gap-6">
-          
-          {!selectedCompany ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
-              <Building2 size={64} className="mb-4 text-slate-300"/>
-              <p>Selecciona un cliente para ver su desglose</p>
-            </div>
-          ) : (
-            <>
-              {/* Encabezado del Cliente */}
-              <div className="flex flex-col border-b border-slate-200 pb-4">
-                <h1 className="text-xl md:text-2xl font-bold text-slate-800">{selectedCompany.nombre}</h1>
-                <p className="text-sm text-slate-500">Comparativo Enero + Febrero (Desglose Mensual)</p>
-              </div>
+            modal.classList.remove('hidden');
+        };
 
-              {/* TABLA 2025 */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 flex justify-between items-center">
-                  <h3 className="font-bold text-slate-700">Facturación 2025</h3>
-                  <span className="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded font-mono font-bold">
-                    Total: {formatCurrency(selectedCompany.ventas2025)}
-                  </span>
-                </div>
-                
-                {/* Contenedor con Scroll para la tabla */}
-                <div className="overflow-auto max-h-[400px] custom-scrollbar">
-                  <table className="w-full text-left text-sm relative">
-                    <thead className="bg-white text-xs uppercase text-slate-500 border-b border-slate-100 sticky top-0 z-10 shadow-sm">
-                      <tr>
-                        <th className="px-6 py-3 w-4/12 bg-white">Producto</th>
-                        <th className="px-6 py-3 text-right bg-white">Consumo Enero</th>
-                        <th className="px-6 py-3 text-right bg-white">Consumo Febrero</th>
-                        <th className="px-6 py-3 text-right bg-slate-50">Suma 2025</th>
-                        <th className="px-6 py-3 text-right bg-white">% Crecimiento</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {selectedCompany.productos
-                        .filter(p => getProductData(p, 2025) > 0) 
-                        .sort((a,b) => getProductData(b, 2025) - getProductData(a, 2025))
-                        .map((prod, idx) => {
-                          const vEne = getProductData(prod, 2025, 'ene');
-                          const vFeb = getProductData(prod, 2025, 'feb');
-                          const vTotal = getProductData(prod, 2025);
-                          return (
-                            <tr key={idx} className="hover:bg-slate-50">
-                              <td className="px-6 py-3 font-medium text-slate-700">{prod.nombre}</td>
-                              <td className="px-6 py-3 text-right font-mono text-slate-600">{formatCurrency(vEne)}</td>
-                              <td className="px-6 py-3 text-right font-mono text-slate-600">{formatCurrency(vFeb)}</td>
-                              <td className="px-6 py-3 text-right font-mono font-bold text-slate-800 bg-slate-50">{formatCurrency(vTotal)}</td>
-                              <td className="px-6 py-3 text-right text-slate-300 text-xs"><Minus size={12} className="ml-auto"/></td>
-                            </tr>
-                          );
-                      })}
-                      {selectedCompany.ventas2025 === 0 && (
-                        <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-400 italic">Sin registros en 2025</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+        window.closeModal = () => {
+            document.getElementById('invoice-modal').classList.add('hidden');
+        };
 
-              {/* TABLA 2026 */}
-              <div className="bg-white rounded-xl shadow-sm border border-blue-200 ring-2 ring-blue-50 overflow-hidden">
-                <div className="bg-blue-50 px-6 py-3 border-b border-blue-100 flex justify-between items-center">
-                  <h3 className="font-bold text-blue-900">Facturación 2026</h3>
-                  <span className="bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded font-mono font-bold">
-                    Total: {formatCurrency(selectedCompany.ventas2026)}
-                  </span>
-                </div>
-                
-                {/* Contenedor con Scroll para la tabla */}
-                <div className="overflow-auto max-h-[400px] custom-scrollbar">
-                  <table className="w-full text-left text-sm relative">
-                    <thead className="bg-white text-xs uppercase text-slate-500 border-b border-blue-50 sticky top-0 z-10 shadow-sm">
-                      <tr>
-                        <th className="px-6 py-3 w-4/12 bg-white">Producto</th>
-                        <th className="px-6 py-3 text-right bg-white">Consumo Enero</th>
-                        <th className="px-6 py-3 text-right bg-white">Consumo Febrero</th>
-                        <th className="px-6 py-3 text-right bg-blue-50/30">Suma 2026</th>
-                        <th className="px-6 py-3 text-right bg-white">% Crecimiento</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-blue-50">
-                      {selectedCompany.productos
-                        .filter(p => getProductData(p, 2026) > 0) 
-                        .sort((a,b) => getProductData(b, 2026) - getProductData(a, 2026))
-                        .map((prod, idx) => {
-                          const vEne = getProductData(prod, 2026, 'ene');
-                          const vFeb = getProductData(prod, 2026, 'feb');
-                          const vTotal26 = getProductData(prod, 2026);
-                          const vTotal25 = getProductData(prod, 2025);
-                          
-                          let growth = 0;
-                          let hasGrowth = false;
-                          if (vTotal25 > 0) {
-                            growth = ((vTotal26 - vTotal25) / vTotal25) * 100;
-                            hasGrowth = true;
-                          } else if (vTotal26 > 0 && vTotal25 === 0) {
-                              hasGrowth = true;
-                              growth = 100;
-                          }
+        // Cerrar modal con click fuera
+        document.getElementById('invoice-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'invoice-modal') closeModal();
+        });
 
-                          return (
-                            <tr key={idx} className="hover:bg-blue-50/20">
-                              <td className="px-6 py-3 font-medium text-slate-800">{prod.nombre}</td>
-                              <td className="px-6 py-3 text-right font-mono text-slate-600">{formatCurrency(vEne)}</td>
-                              <td className="px-6 py-3 text-right font-mono text-slate-600">{formatCurrency(vFeb)}</td>
-                              <td className="px-6 py-3 text-right font-mono font-bold text-blue-700 bg-blue-50/30">{formatCurrency(vTotal26)}</td>
-                              <td className="px-6 py-3 text-right font-bold">
-                                {hasGrowth ? (
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs ${growth >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                    {growth >= 0 ? <ArrowUpRight size={10} className="mr-1"/> : <ArrowDownRight size={10} className="mr-1"/>}
-                                    {growth === 100 && vTotal25 === 0 ? 'Nuevo' : formatPercent(growth)}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-300 text-xs flex justify-end"><Minus size={12}/></span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                      })}
-                       {selectedCompany.ventas2026 === 0 && (
-                        <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-400 italic">Sin registros en 2026</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            state.searchTerm = e.target.value;
+            updateUI();
+        });
 
-            </>
-          )}
-
-        </div>
-      </div>
-    </div>
-  );
-}
+        initApp();
+    </script>
+</body>
+</html>
