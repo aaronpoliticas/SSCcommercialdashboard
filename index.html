@@ -2,1030 +2,586 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ventas 2024 - 2025</title>
-    
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dashboard Comercial</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- React & ReactDOM (Pinned Versions for Stability) -->
-    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-    
-    <!-- Prop-Types (Required dependency for Recharts UMD) -->
-    <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
-    
-    <!-- Recharts (Pinned Version) -->
-    <script src="https://unpkg.com/recharts@2.12.3/umd/Recharts.js"></script>
-    
-    <!-- Chart.js (Added for Strategic Dashboard) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Babel -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <!-- PDF Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
     <style>
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
-
-        /* PDF Generation Classes */
-        .pdf-mode {
-            width: 1200px !important;
-            min-height: 100vh !important;
-            overflow: visible !important;
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-            z-index: 9999 !important;
-            background: #f8fafc !important;
-            padding: 40px !important;
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+        .animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
         
-        .pdf-mode .grid { display: grid !important; }
-        .hide-on-pdf { display: none !important; }
-        .page-break { page-break-before: always; margin-top: 40px; border-top: 2px dashed #cbd5e1; padding-top: 40px; }
-
-        /* --- STRATEGIC DASHBOARD STYLES (Namespaced to .strat-view) --- */
-        .strat-view {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); /* Original Body BG */
-            padding: 20px;
-            border-radius: 12px;
+        .tab-active { 
+            background-color: #1e3a8a; 
+            color: white; 
+            border: 2px solid #1e3a8a; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
+        .tab-inactive { background-color: white; color: #64748b; border: 2px solid #cbd5e1; }
+        .tab-inactive:hover { background-color: #f1f5f9; color: #334155; border-color: #94a3b8; }
 
-        .strat-view .container-like {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            padding: 40px;
-        }
-
-        .strat-view .header {
-            text-align: center;
-            margin-bottom: 40px;
-            border-bottom: 3px solid #7b2cbf;
-            padding-bottom: 20px;
-        }
-
-        .strat-view .header h1 {
-            color: #7b2cbf;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .strat-view .header p {
-            color: #666;
-            font-size: 1.1em;
-        }
-
-        .strat-view .alert-banner {
-            background: #ffffff; /* Fondo blanco */
-            border: 3px solid #dc2626; /* Borde rojo sólido */
-            color: #1f2937; /* Texto casi negro (gris muy oscuro) para legibilidad */
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-
-        .strat-view .alert-banner h2 { 
-            font-size: 1.8em; 
-            margin-bottom: 10px; 
-            font-weight: bold; 
-            color: #dc2626; /* Título en rojo para mantener la alerta */
-        }
+        .lang-btn { opacity: 0.6; filter: grayscale(100%); transition: all 0.2s; }
+        .lang-btn.active { opacity: 1; filter: grayscale(0%); transform: scale(1.1); font-weight: bold; text-decoration: underline; text-decoration-color: #2563eb; text-underline-offset: 4px; }
         
-        .strat-view .alert-banner p { 
-            font-size: 1.2em; 
-            margin: 0;
-            font-weight: 500;
-        }
-
-        .strat-view .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
-        }
-
-        .strat-view .metric-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-            transition: transform 0.3s ease;
-            border-left: 5px solid;
-        }
-        .strat-view .metric-card:hover { transform: translateY(-5px); }
-        .strat-view .metric-card.purple { border-left-color: #7b2cbf; }
-        .strat-view .metric-card.red { border-left-color: #dc2626; }
-        .strat-view .metric-card.green { border-left-color: #059669; }
-        .strat-view .metric-card.orange { border-left-color: #ea580c; }
-
-        .strat-view .metric-label { font-size: 0.85em; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 600; }
-        .strat-view .metric-value { font-size: 2.2em; font-weight: bold; margin-bottom: 8px; }
-        .strat-view .purple .metric-value { color: #7b2cbf; }
-        .strat-view .red .metric-value { color: #dc2626; }
-        .strat-view .green .metric-value { color: #059669; }
-        .strat-view .orange .metric-value { color: #ea580c; }
-        .strat-view .metric-change { font-size: 0.9em; font-weight: 600; display: flex; align-items: center; gap: 5px; }
-        .strat-view .metric-change.negative { color: #dc2626; }
-        .strat-view .metric-change.positive { color: #059669; }
-
-        .strat-view .chart-container {
-            background: white; border-radius: 15px; padding: 30px; margin-bottom: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-        }
-        .strat-view .chart-title { font-size: 1.5em; color: #333; margin-bottom: 20px; font-weight: 600; }
-        .strat-view .chart-wrapper { position: relative; height: 400px; }
-
-        .strat-view .table-container {
-            background: white; border-radius: 15px; padding: 30px; margin-bottom: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); overflow-x: auto;
-        }
-        .strat-view table { width: 100%; border-collapse: collapse; }
-        .strat-view th {
-            background: linear-gradient(135deg, #7b2cbf 0%, #5a189a 100%);
-            color: white; padding: 15px; text-align: left; font-weight: 600; text-transform: uppercase; font-size: 0.85em; letter-spacing: 1px;
-        }
-        .strat-view td { padding: 15px; border-bottom: 1px solid #e5e7eb; }
-        .strat-view tr:hover { background-color: #f9fafb; }
-        .strat-view .highlight-row { background-color: #fef3c7; font-weight: 600; }
-        .strat-view .number { font-family: 'Courier New', monospace; font-weight: 600; }
-        .strat-view .negative-value { color: #dc2626; }
-        .strat-view .positive-value { color: #059669; }
-
-        .strat-view .section-title {
-            font-size: 1.8em; color: #7b2cbf; margin: 40px 0 20px 0; font-weight: bold; border-left: 5px solid #7b2cbf; padding-left: 15px;
-        }
-
-        .strat-view .insight-box {
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            border-left: 5px solid #f59e0b; padding: 20px; border-radius: 10px; margin: 20px 0;
-        }
-        .strat-view .insight-box h3 { color: #92400e; margin-bottom: 10px; font-weight: bold; }
-        .strat-view .insight-box p { color: #78350f; line-height: 1.6; }
-
-        .strat-view .priority-section {
-            background: white; border-radius: 15px; padding: 30px; margin-bottom: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); border-left: 6px solid;
-        }
-        .strat-view .priority-1 { border-left-color: #dc2626; background: linear-gradient(135deg, #ffffff 0%, #fee2e2 100%); }
-        .strat-view .priority-2 { border-left-color: #ea580c; background: linear-gradient(135deg, #ffffff 0%, #ffedd5 100%); }
-        .strat-view .priority-3 { border-left-color: #7b2cbf; background: linear-gradient(135deg, #ffffff 0%, #f3e8ff 100%); }
-        .strat-view .control { border-left-color: #059669; background: linear-gradient(135deg, #ffffff 0%, #d1fae5 100%); }
-
-        .strat-view .priority-header { margin-bottom: 25px; display: flex; align-items: center; gap: 15px; }
-        .strat-view .priority-badge {
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.75em; font-weight: bold; letter-spacing: 1px;
-        }
-        .strat-view .priority-2 .priority-badge { background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); }
-        .strat-view .priority-3 .priority-badge { background: linear-gradient(135deg, #7b2cbf 0%, #5a189a 100%); }
-        .strat-view .control-badge { background: linear-gradient(135deg, #059669 0%, #047857 100%); }
-        
-        .strat-view .action-item {
-            display: flex; gap: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px;
-        }
-        .strat-view .action-number {
-            min-width: 40px; height: 40px; background: linear-gradient(135deg, #7b2cbf 0%, #5a189a 100%); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2em; flex-shrink: 0;
-        }
-        .strat-view .action-content h4 { color: #333; margin-bottom: 5px; font-weight: bold; }
-        .strat-view .action-content p, .strat-view .action-content ul { color: #666; line-height: 1.6; font-size: 0.95em; }
-        .strat-view .action-content ul { margin-left: 20px; margin-top: 5px; list-style-type: disc; }
-
-        .strat-view .timeline-section {
-            background: white; border-radius: 15px; padding: 40px; margin-bottom: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-        }
-        .strat-view .timeline { position: relative; padding: 20px 0; }
-        .strat-view .timeline::before {
-            content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; background: linear-gradient(to bottom, #7b2cbf, #059669); transform: translateX(-50%);
-        }
-        .strat-view .timeline-item {
-            display: grid; grid-template-columns: 1fr auto 1fr; gap: 30px; margin-bottom: 40px; align-items: start;
-        }
-        .strat-view .timeline-item:nth-child(even) .timeline-content { grid-column: 1; text-align: right; }
-        .strat-view .timeline-item:nth-child(odd) .timeline-content { grid-column: 3; text-align: left; }
-        .strat-view .timeline-marker {
-            grid-column: 2; background: white; border: 4px solid; border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9em; color: white; position: relative; z-index: 2;
-        }
-        .strat-view .week1-2 { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); border-color: #dc2626; }
-        .strat-view .week3-4 { background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); border-color: #ea580c; }
-        .strat-view .month2 { background: linear-gradient(135deg, #7b2cbf 0%, #5a189a 100%); border-color: #7b2cbf; }
-        .strat-view .month3 { background: linear-gradient(135deg, #059669 0%, #047857 100%); border-color: #059669; }
-        .strat-view .timeline-content { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 3px 15px rgba(0,0,0,0.08); }
-        
-        .strat-view .final-warning {
-            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border: 3px solid #dc2626; border-radius: 15px; padding: 30px; margin-top: 30px; text-align: center;
-        }
-        .strat-view .final-warning h3 { color: #7f1d1d; margin-bottom: 15px; font-size: 1.5em; font-weight: bold; }
-        .strat-view .final-warning p { color: #7f1d1d; line-height: 1.8; }
-
-        @media (max-width: 768px) {
-            .strat-view .timeline::before { left: 40px; transform: none; }
-            .strat-view .timeline-item { grid-template-columns: 80px 1fr; gap: 15px; }
-            .strat-view .timeline-item:nth-child(even) .timeline-content,
-            .strat-view .timeline-item:nth-child(odd) .timeline-content { grid-column: 2; text-align: left; }
-            .strat-view .timeline-marker { grid-column: 1; }
-        }
+        .modal-overlay { background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px); }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 h-screen w-screen overflow-hidden">
-    <div id="root" class="h-full w-full"></div>
+<body class="bg-slate-100 h-screen flex flex-col font-sans text-slate-800 overflow-hidden">
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo, useRef } = React;
-        const { 
-            LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, 
-            CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, ComposedChart 
-        } = window.Recharts || {};
+    <!-- MODAL DE FACTURAS -->
+    <div id="invoice-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay p-4 animate-fade-in">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[80vh]">
+            <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span id="modal-title">Facturas</span>
+                    </h3>
+                    <p id="modal-subtitle" class="text-xs text-slate-500 mt-1"></p>
+                </div>
+                <button onclick="closeModal()" class="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-0">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-500 sticky top-0 border-b border-slate-200 shadow-sm">
+                        <tr>
+                            <th class="px-6 py-3 font-semibold" data-i18n="th_invoice"># Factura</th>
+                            <th class="px-6 py-3 font-semibold text-right" data-i18n="th_amount">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-tbody" class="divide-y divide-slate-100 text-slate-700">
+                        <!-- Contenido dinámico -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="p-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex justify-between items-center">
+                <span class="text-xs text-slate-500" id="modal-count"></span>
+                <span class="text-sm font-bold text-slate-800" id="modal-total"></span>
+            </div>
+        </div>
+    </div>
 
-        // --- TRANSLATIONS ---
-        const TRANSLATIONS = {
+    <!-- STATUS BAR -->
+    <div id="status-bar" class="hidden px-4 py-2 text-xs font-medium flex justify-between items-center border-b shadow-sm z-40 bg-white">
+        <span id="status-text" class="flex items-center gap-2"></span>
+        <button onclick="window.location.reload()" class="underline ml-4">Recargar</button>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden relative" id="main-container">
+        
+        <!-- PANEL IZQUIERDO (LISTA) -->
+        <div id="left-panel" class="w-full md:w-5/12 lg:w-1/3 bg-white border-r border-slate-200 flex flex-col shadow-xl z-20 absolute inset-0 md:relative transition-transform duration-300">
+            <div class="bg-slate-50 border-b border-slate-200 p-4 pb-2">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2 max-w-[65%] leading-tight" data-i18n="dashboard_title">
+                        <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        Dashboard Comercial
+                    </h2>
+                    <div class="flex gap-2 bg-white px-2 py-1 rounded-full border border-slate-200 shadow-sm flex-shrink-0">
+                        <button onclick="changeLanguage('es')" id="lang-es" class="lang-btn active text-xs flex items-center gap-1"><span>MX</span> 🇲🇽</button>
+                        <div class="w-px bg-slate-200 h-4 self-center"></div>
+                        <button onclick="changeLanguage('fr')" id="lang-fr" class="lang-btn text-xs flex items-center gap-1"><span>FR</span> 🇫🇷</button>
+                    </div>
+                </div>
+                
+                <!-- PESTAÑAS (MÁS GRANDES PARA TOUCH) -->
+                <div class="flex gap-2 mb-3">
+                    <button onclick="changeView('february')" id="tab-february" class="flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active touch-manipulation">
+                        <span data-i18n="tab_feb">Solo Febrero</span><br/><span class="font-normal opacity-80 text-[10px] md:text-[9px]" data-i18n="tab_feb_sub">(Comparativo Mes)</span>
+                    </button>
+                    <button onclick="changeView('bimester')" id="tab-bimester" class="flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive touch-manipulation">
+                        <span data-i18n="tab_bimester">1er Bimestre</span><br/><span class="font-normal opacity-80 text-[10px] md:text-[9px]" data-i18n="tab_bimester_sub">(Ene + Feb)</span>
+                    </button>
+                </div>
+
+                <div class="relative mt-2">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
+                    <input type="text" id="search-input" placeholder="Buscar cliente..." class="w-full pl-9 pr-3 py-3 md:py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all shadow-sm">
+                </div>
+            </div>
+            <!-- ENCABEZADOS -->
+            <div class="grid grid-cols-12 px-4 py-3 bg-slate-100 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider sticky top-0 z-10">
+                <div class="col-span-6 pl-1" data-i18n="col_client">Cliente</div>
+                <div class="col-span-3 text-right header-year-2025">2025</div>
+                <div class="col-span-3 text-right header-year-2026">2026</div>
+            </div>
+            <div id="clients-list" class="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 relative">
+                <div id="list-loader" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
+                    <svg class="animate-spin h-10 w-10 text-blue-600 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span class="text-xs text-slate-500 animate-pulse" data-i18n="loading">Cargando datos...</span>
+                </div>
+            </div>
+            <div id="list-footer" class="p-3 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-400 text-center font-medium">0 Clientes listados</div>
+        </div>
+
+        <!-- PANEL DERECHO (DETALLE) -->
+        <div id="detail-panel" class="w-full md:w-7/12 lg:w-2/3 flex flex-col h-full bg-slate-100 overflow-y-auto p-4 md:p-6 gap-6 custom-scrollbar absolute inset-0 md:relative z-30 hidden md:flex">
+            
+            <!-- BOTÓN VOLVER (SOLO MÓVIL) -->
+            <button onclick="backToMobileList()" class="md:hidden flex items-center gap-2 text-slate-500 hover:text-blue-600 font-medium mb-2 w-fit">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                <span data-i18n="back_list">Volver a la lista</span>
+            </button>
+
+            <div id="empty-state" class="flex-1 flex flex-col items-center justify-center text-slate-400">
+                <svg class="w-20 h-20 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                <p data-i18n="empty_state">Selecciona un cliente para ver su desglose</p>
+            </div>
+            
+            <div id="detail-content" class="hidden flex-col gap-6 animate-fade-in pb-8">
+                <div class="flex flex-col border-b border-slate-200 pb-4">
+                    <h1 id="detail-title" class="text-xl md:text-3xl font-bold text-slate-800 break-words leading-tight"></h1>
+                    <p id="detail-subtitle" class="text-sm text-slate-500 mt-1"></p>
+                </div>
+
+                <!-- Tabla 2026 -->
+                <div class="bg-white rounded-xl shadow-sm border border-blue-200 ring-2 ring-blue-50 overflow-hidden">
+                    <div class="bg-blue-50 px-4 md:px-6 py-3 border-b border-blue-100 flex flex-wrap justify-between items-center sticky top-0 z-20 gap-2">
+                        <div class="flex items-center gap-3">
+                            <h3 class="font-bold text-blue-900 text-sm"><span data-i18n="fact_2026">Facturación 2026</span></h3>
+                            <button onclick="openInvoiceModal(2026)" class="text-[10px] bg-white border border-blue-300 hover:bg-blue-50 text-blue-700 px-2 py-1 rounded shadow-sm flex items-center transition-colors active:scale-95">
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <span data-i18n="btn_invoices">Ver Facturas</span>
+                            </button>
+                        </div>
+                        <span id="total-2026" class="bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded font-mono font-bold"></span>
+                    </div>
+                    <div class="overflow-auto max-h-[350px] custom-scrollbar">
+                        <table class="w-full text-left text-sm relative">
+                            <thead class="bg-white text-xs uppercase text-slate-500 border-b border-blue-50 sticky top-0 z-10 shadow-sm">
+                                <tr>
+                                    <th class="px-4 md:px-6 py-3 w-5/12 bg-white" data-i18n="col_prod">Producto</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-white col-ene hidden md:table-cell" data-i18n="col_jan">Enero</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-white col-feb hidden md:table-cell" data-i18n="col_feb">Febrero</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-blue-50/50 font-bold text-blue-800" data-i18n="col_sum_2026">Total 2026</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-white font-bold w-16 md:w-24" data-i18n="col_growth">% Crec.</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-2026" class="divide-y divide-blue-50"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tabla 2025 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 px-4 md:px-6 py-3 border-b border-slate-200 flex flex-wrap justify-between items-center sticky top-0 z-20 gap-2">
+                        <div class="flex items-center gap-3">
+                            <h3 class="font-bold text-slate-700 text-sm"><span data-i18n="fact_2025">Facturación 2025</span></h3>
+                            <button onclick="openInvoiceModal(2025)" class="text-[10px] bg-white border border-slate-300 hover:bg-slate-100 text-slate-600 px-2 py-1 rounded shadow-sm flex items-center transition-colors active:scale-95">
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <span data-i18n="btn_invoices">Ver Facturas</span>
+                            </button>
+                        </div>
+                        <span id="total-2025" class="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded font-mono font-bold"></span>
+                    </div>
+                    <div class="overflow-auto max-h-[350px] custom-scrollbar">
+                        <table class="w-full text-left text-sm relative">
+                            <thead class="bg-white text-xs uppercase text-slate-500 border-b border-slate-100 sticky top-0 z-10 shadow-sm">
+                                <tr>
+                                    <th class="px-4 md:px-6 py-3 w-5/12 bg-white" data-i18n="col_prod">Producto</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-white col-ene hidden md:table-cell" data-i18n="col_jan">Enero</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-white col-feb hidden md:table-cell" data-i18n="col_feb">Febrero</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-slate-50 font-bold" data-i18n="col_sum_2025">Total 2025</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-white w-16 md:w-24"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-2025" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- LÓGICA DE NEGOCIO -->
+    <script>
+        const translations = {
             es: {
-                title: "Ventas 2024 - 2025",
-                subtitle: "Análisis de venta y márgenes",
-                footer: "SSC GOURMET DISTRIBUTION",
-                sourceInfo: "Información combinada de Odoo y Apsheet",
-                tabs: {
-                    dashboard: "Dashboard General",
-                    growth: "Crecimiento General",
-                    margin: "Margen & Rentabilidad",
-                    customers: "Análisis por Cliente",
-                    analysis: "Análisis de Margen (Estratégico)"
-                },
-                kpis: {
-                    totalRevenue: "Facturación Total",
-                    totalKg: "KG Totales Entregados",
-                    avgMargin: "Margen Promedio por KG",
-                    totalProfit: "Beneficio Total",
-                    growthRevenue: "Crecimiento Facturación",
-                    growthVol: "Crecimiento Volumen (KG)",
-                    marginPct: "% de Margen Global",
-                    marginGap: "Diferencia vs 2024",
-                    profitability: "Rentabilidad"
-                },
-                charts: {
-                    monthlyRevenue: "Facturación Mensual Comparativa",
-                    topClients: "Top 5 Clientes",
-                    topRecipes: "Top 5 Recetas (Volumen KG)",
-                    monthlyComp: "Comparativa Mensual",
-                    quarterly: "Crecimiento Trimestral",
-                    volEvolution: "Evolución Volumen (KG)",
-                    recipeDist: "Distribución por Receta",
-                    priceVsCost: "Evolución Precio vs Costo (Promedios Ponderados)",
-                    profitComp: "Composición Beneficio vs Costo",
-                    recipeProfit: "Rentabilidad por Receta"
-                },
-                table: {
-                    client: "Cliente",
-                    sale: "Venta",
-                    growth: "Crecimiento",
-                    q: "Trimestre",
-                    change: "Cambio",
-                    concept: "Concepto",
-                    price: "Precio Prom/KG",
-                    cost: "Costo Prom/KG",
-                    margin: "Margen/KG",
-                    marginPct: "% Margen",
-                    recipe: "Receta",
-                    profit: "Beneficio Total",
-                    branch: "Sucursal",
-                    avgVol: "Vol. Prom (Kg/Ticket)",
-                    totalVol: "Vol. Total (Kg)",
-                    opportunity: "Oportunidad",
-                    marginAbs: "Margen $"
-                },
-                obs: {
-                    general: "Observaciones Generales",
-                    growth: "Análisis de Crecimiento",
-                    margin: "Análisis de Rentabilidad",
-                    customers: "Insights de Clientes"
-                },
-                common: {
-                    downloadPdf: "Descargar Vista Actual",
-                    downloadFull: "Descargar Informe Completo",
-                    loading: "Cargando datos...",
-                    error: "Error cargando datos",
-                    year: "Año",
-                    price: "Precio",
-                    cost: "Costo",
-                    margin: "Margen",
-                    profit: "Beneficio",
-                    vs: "vs",
-                    generating: "Generando PDF...",
-                    allMonths: "Todos los Meses",
-                    groupBy: "Agrupar por",
-                    fiscalId: "Razón Social",
-                    location: "Sucursal"
-                },
-                strat: {
-                    mainTitle: "📊 Dashboard: Análisis de Margen",
-                    mainSub: "Comparativa 2024 vs 2025 | Actualizado: 11 de febrero 2026",
-                    alertTitle: "🚨 ALERTA CRÍTICA",
-                    alertDesc: "Caída dramática del margen: -17.45 puntos porcentuales",
-                    alertSub: "Margen actual 39.76% - Por debajo del umbral saludable de 50%",
-                    kpi1: "Margen Promedio por KG 2025",
-                    kpi1Sub: "↓ $40.68 vs 2024",
-                    kpi2: "% de Margen Global 2025",
-                    kpi2Sub: "↓ -17.5 puntos",
-                    kpi3: "Beneficio Total 2025",
-                    kpi3Sub: "↓ -13.4% vs 2024",
-                    kpi4: "Margen Perdido Anual",
-                    kpi4Sub: "$401K por mes",
-                    chart1Title: "Evolución Precio vs Costo (Promedios Ponderados)",
-                    insightTitle: "💡 Insight Clave",
-                    insightDesc: "La brecha se amplió dramáticamente: El costo del café subió +53.3% (de $127/kg a $195/kg), pero el precio de venta solo aumentó +9.4% (de $291/kg a $318/kg). Esta diferencia de ~44 puntos porcentuales sin trasladar está destruyendo tu margen.",
-                    table1Title: "Composición Beneficio vs Costo",
-                    change: "Cambio",
-                    chart2Title: "Impacto por Tipo de Café",
-                    chart3Title: "Escenarios de Recuperación",
-                    table2Title: "Top 5 Clientes por Margen Absoluto (2025)",
-                    planTitle: "Plan de Acción Urgente",
-                    timelineTitle: "📅 Timeline de Implementación",
-                    p1: "PRIORIDAD 1", p1Title: "Ajuste de Precios Inmediato (próximos 30 días)",
-                    p2: "PRIORIDAD 2", p2Title: "Negociación con Proveedores",
-                    p3: "PRIORIDAD 3", p3Title: "Optimización del Mix",
-                    ctrl: "CONTROL Y MONITOREO", ctrlTitle: "Sistema de Seguimiento Continuo",
-                    warnTitle: "⚠️ Consecuencias de No Actuar",
-                    warnDesc: "A este ritmo, en 2026 tu margen podría caer por debajo del 30%, haciendo el negocio inviable. El costo del café sigue siendo volátil y podría subir más. Es mejor perder algunos clientes por precio que operar con márgenes insostenibles. Un negocio con margen del 40% es más frágil que uno con 55%, incluso si el segundo tiene menos ventas.",
-                    steps: [
-                        {t: "Aumento base del 30-40%", d: "Para recuperar el margen perdido, necesitas aumentar precios significativamente. Un aumento del 35% te llevaría a un margen cercano al 50%."},
-                        {t: "Estrategia escalonada:", l: ["Inmediato (+20%): Clientes nuevos", "30 días (+15%): Contratos flexibles", "60-90 días (+10-15%): Clientes clave"]},
-                        {t: "Segmentación por sensibilidad:", l: ["Hoteles lujo (+35-40%)", "Restaurantes premium (+30-35%)", "Clientes sensibles (+20-25%)"]},
-                        {t: "Contratos a futuro", d: "Fija precios a 6-12 meses."},
-                        {t: "Descuentos por volumen", d: "Busca 10-15% de descuento."},
-                        {t: "Diversificación", d: "Ten 2-3 proveedores."},
-                        {t: "Promover premium", d: "Espresso y Cold Brew."},
-                        {t: "Revisar bajo margen", d: "Si Grano da <33%, eliminar."},
-                        {t: "Dashboard semanal", d: "Alarma si baja de 38%."},
-                        {t: "Cláusulas de ajuste", d: "Si costo sube >20%, precio sube."}
-                    ],
-                    time: {
-                        w1: "Sem 1-2", prep: "Preparación", l1: ["Explicación costos", "Segmentación", "Nuevos contratos"],
-                        w3: "Sem 3-4", exec: "Ejecución", l2: ["Top 10 clientes", "Clientes nuevos", "Comunicado"],
-                        m2: "Mes 2", imp: "Implementación", l3: ["Aumentos", "Negociación prov.", "Monitoreo"],
-                        m3: "Mes 3", eval: "Evaluación", l4: ["Evaluar", "Ajustar", "Objetivo >48%"]
-                    }
-                }
+                dashboard_title: "Dashboard Comercial",
+                tab_bimester: "1er Bimestre",
+                tab_bimester_sub: "(Ene + Feb)",
+                tab_feb: "Solo Febrero",
+                tab_feb_sub: "(Comparativo Mes)",
+                search_placeholder: "Buscar cliente...",
+                col_client: "Cliente",
+                col_total_2025: "Total 2025",
+                col_total_2026: "Total 2026",
+                col_feb_2025: "Feb 2025",
+                col_feb_2026: "Feb 2026",
+                loading: "Cargando datos...",
+                footer_listed: "Clientes listados",
+                empty_state: "Selecciona un cliente para ver su desglose",
+                detail_subtitle_bim: "Comparativo Primer Bimestre (Ene + Feb)",
+                detail_subtitle_feb: "Comparativo Mensual (Febrero)",
+                fact_2025: "Facturación 2025",
+                fact_2026: "Facturación 2026",
+                col_prod: "Producto",
+                col_jan: "Enero",
+                col_feb: "Febrero",
+                col_sum_2025: "Total 2025",
+                col_sum_2026: "Total 2026",
+                col_growth: "% Crec.",
+                group_new: "🌟 Clientes Nuevos",
+                group_high: "Crecimiento > 10%",
+                group_stable: "Estables (0% - 10%)",
+                group_neg: "Decrecimiento",
+                badge_new: "NUEVO",
+                no_records: "Sin registros en este periodo",
+                no_records_year: "Sin registros en",
+                btn_invoices: "Ver Facturas",
+                modal_title_prefix: "Facturas",
+                th_invoice: "# Factura",
+                th_amount: "Monto",
+                back_list: "Volver a la lista"
             },
             fr: {
-                title: "Ventes 2024 - 2025",
-                subtitle: "Analyse des ventes et des marges",
-                footer: "SSC GOURMET DISTRIBUTION",
-                sourceInfo: "Informations combinées d'Odoo et Apsheet",
-                tabs: {
-                    dashboard: "Tableau de Bord",
-                    growth: "Croissance Générale",
-                    margin: "Marge & Rentabilité",
-                    customers: "Analyse Client",
-                    analysis: "Analyse de la Marge (Stratégique)"
-                },
-                kpis: {
-                    totalRevenue: "Chiffre d'Affaires Total",
-                    totalKg: "KG Totaux Livrés",
-                    avgMargin: "Marge Moyenne par KG",
-                    totalProfit: "Bénéfice Total",
-                    growthRevenue: "Croissance CA",
-                    growthVol: "Croissance Volume (KG)",
-                    marginPct: "% Marge Globale",
-                    marginGap: "Écart vs 2024",
-                    profitability: "Rentabilité"
-                },
-                charts: {
-                    monthlyRevenue: "Revenus Mensuels Comparatifs",
-                    topClients: "Top 5 Clients",
-                    topRecipes: "Top 5 Recettes (Volume KG)",
-                    monthlyComp: "Comparaison Mensuelle",
-                    quarterly: "Croissance Trimestrielle",
-                    volEvolution: "Évolution du Volume (KG)",
-                    recipeDist: "Répartition par Recette",
-                    priceVsCost: "Évolution Prix vs Coût (Moyennes Pondérées)",
-                    profitComp: "Composition Bénéfice vs Coût",
-                    recipeProfit: "Rentabilité par Recette"
-                },
-                table: {
-                    client: "Client",
-                    sale: "Vente",
-                    growth: "Croissance",
-                    q: "Trimestre",
-                    change: "Chang.",
-                    concept: "Concept",
-                    price: "Prix Moy/KG",
-                    cost: "Coût Moy/KG",
-                    margin: "Marge/KG",
-                    marginPct: "% Marge",
-                    recipe: "Recette",
-                    profit: "Bénéfice Total",
-                    branch: "Succursale",
-                    avgVol: "Vol. Moy (Kg/Ticket)",
-                    totalVol: "Vol. Total (Kg)",
-                    opportunity: "Opportunité",
-                    marginAbs: "Marge $"
-                },
-                obs: {
-                    general: "Observations Générales",
-                    growth: "Analyse de la Croissance",
-                    margin: "Analyse de Rentabilité",
-                    customers: "Aperçu Client"
-                },
-                common: {
-                    downloadPdf: "Télécharger la Vue Actuelle",
-                    downloadFull: "Télécharger le Rapport Complet",
-                    loading: "Chargement des données...",
-                    error: "Erreur de chargement",
-                    year: "Année",
-                    price: "Prix",
-                    cost: "Coût",
-                    margin: "Marge",
-                    profit: "Bénéfice",
-                    vs: "vs",
-                    generating: "Génération du PDF...",
-                    allMonths: "Tous les mois",
-                    groupBy: "Grouper par",
-                    fiscalId: "Raison Sociale",
-                    location: "Succursale"
-                },
-                strat: {
-                    mainTitle: "📊 Tableau de Bord: Analyse de la Marge",
-                    mainSub: "Comparatif 2024 vs 2025 | Mis à jour: 11 février 2026",
-                    alertTitle: "🚨 ALERTE CRITIQUE",
-                    alertDesc: "Chute dramatique de la marge: -17.45 points de pourcentage",
-                    alertSub: "Marge actuelle 39.76% - En dessous du seuil sain de 50%",
-                    kpi1: "Marge Moyenne par KG 2025",
-                    kpi1Sub: "↓ 40.68$ vs 2024",
-                    kpi2: "% Marge Globale 2025",
-                    kpi2Sub: "↓ -17.5 points",
-                    kpi3: "Bénéfice Total 2025",
-                    kpi3Sub: "↓ -13.4% vs 2024",
-                    kpi4: "Marge Annuelle Perdue",
-                    kpi4Sub: "401K$ par mois",
-                    chart1Title: "Évolution Prix vs Coût (Moyennes Pondérées)",
-                    insightTitle: "💡 Insight Clé",
-                    insightDesc: "L'écart s'est creusé de façon spectaculaire: Le coût du café a augmenté de +53.3% (de 127$/kg à 195$/kg), mais le prix de vente n'a augmenté que de +9.4% (de 291$/kg à 318$/kg). Cet écart de ~44 points non répercuté détruit votre marge.",
-                    table1Title: "Composition Bénéfice vs Coût",
-                    change: "Changement",
-                    chart2Title: "Impact par Type de Café",
-                    chart3Title: "Scénarios de Récupération",
-                    table2Title: "Top 5 Clients par Marge Absolue (2025)",
-                    planTitle: "Plan d'Action Urgent",
-                    timelineTitle: "📅 Calendrier de Mise en Œuvre",
-                    p1: "PRIORITÉ 1", p1Title: "Ajustement Immédiat des Prix (30 prochains jours)",
-                    p2: "PRIORITÉ 2", p2Title: "Négociation Fournisseurs",
-                    p3: "PRIORITÉ 3", p3Title: "Optimisation du Mix",
-                    ctrl: "CONTRÔLE ET SUIVI", ctrlTitle: "Système de Suivi Continu",
-                    warnTitle: "⚠️ Conséquences de l'Inaction",
-                    warnDesc: "À ce rythme, en 2026 votre marge pourrait tomber sous les 30%, rendant l'activité non viable. Le coût du café reste volatil. Il vaut mieux perdre quelques clients sur le prix que d'opérer avec des marges insoutenables.",
-                    steps: [
-                        {t: "Augmentation de base de 30-40%", d: "Pour récupérer la marge perdue, une augmentation significative est nécessaire. +35% vous ramènerait près de 50% de marge."},
-                        {t: "Stratégie échelonnée:", l: ["Immédiat (+20%): Nouveaux clients", "30 jours (+15%): Contrats flexibles", "60-90 jours (+10-15%): Clients clés"]},
-                        {t: "Segmentation par sensibilité:", l: ["Hôtels luxe (+35-40%)", "Restaurants premium (+30-35%)", "Clients sensibles (+20-25%)"]},
-                        {t: "Contrats à terme", d: "Fixez les prix à 6-12 mois."},
-                        {t: "Remises sur volume", d: "Visez 10-15% de remise."},
-                        {t: "Diversification", d: "Ayez 2-3 fournisseurs."},
-                        {t: "Promouvoir le premium", d: "Espresso et Cold Brew."},
-                        {t: "Revoir les marges faibles", d: "Si Grain <33%, supprimer."},
-                        {t: "Tableau de bord hebdo", d: "Alerte si <38%."},
-                        {t: "Clauses d'ajustement", d: "Si coût >20%, prix monte."}
-                    ],
-                    time: {
-                        w1: "Sem 1-2", prep: "Préparation", l1: ["Explication coûts", "Segmentation", "Nouveaux contrats"],
-                        w3: "Sem 3-4", exec: "Exécution", l2: ["Top 10 clients", "Nouveaux clients", "Communication"],
-                        m2: "Mois 2", imp: "Mise en œuvre", l3: ["Augmentations", "Négociation fourn.", "Suivi"],
-                        m3: "Mois 3", eval: "Évaluation", l4: ["Évaluer", "Ajuster", "Obj >48%"]
-                    }
-                }
+                dashboard_title: "Tableau de Bord Commercial",
+                tab_bimester: "1er Bimestre",
+                tab_bimester_sub: "(Jan + Fév)",
+                tab_feb: "Février Uniq.",
+                tab_feb_sub: "(Comparatif Mois)",
+                search_placeholder: "Rechercher client...",
+                col_client: "Client",
+                col_total_2025: "Total 2025",
+                col_total_2026: "Total 2026",
+                col_feb_2025: "Fév 2025",
+                col_feb_2026: "Fév 2026",
+                loading: "Chargement des données...",
+                footer_listed: "Clients listés",
+                empty_state: "Sélectionnez un client pour voir les détails",
+                detail_subtitle_bim: "Comparatif 1er Bimestre (Jan + Fév)",
+                detail_subtitle_feb: "Comparatif Mensuel (Février)",
+                fact_2025: "Facturation 2025",
+                fact_2026: "Facturation 2026",
+                col_prod: "Produit",
+                col_jan: "Janvier",
+                col_feb: "Février",
+                col_sum_2025: "Total",
+                col_sum_2026: "Total",
+                col_growth: "% Crois.",
+                group_new: "🌟 Nouveaux Clients",
+                group_high: "Croissance > 10%",
+                group_stable: "Stables (0% - 10%)",
+                group_neg: "Décroissance",
+                badge_new: "NOUVEAU",
+                no_records: "Aucun enregistrement pour cette période",
+                no_records_year: "Aucun enregistrement en",
+                btn_invoices: "Voir Factures",
+                modal_title_prefix: "Factures",
+                th_invoice: "# Facture",
+                th_amount: "Montant",
+                back_list: "Retour à la liste"
             }
         };
 
-        // --- ICONS ---
-        const Icon = ({ name, className }) => {
-            const icons = {
-                dollar: <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />,
-                scale: <g><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" strokeLinejoin="round"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" strokeLinejoin="round"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></g>,
-                trendingUp: <g><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></g>,
-                chart: <g><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></g>,
-                pie: <g><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></g>,
-                download: <g><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></g>,
-                fileText: <g><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></g>,
-                dashboard: <g><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></g>,
-                loader: <path d="M21 12a9 9 0 1 1-6.219-8.56"/>,
-                globe: <g><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></g>,
-                users: <g><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></g>,
-                filter: <g><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></g>,
-                alert: <g><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></g>
-            };
-            return (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                    {icons[name] || icons.dollar}
-                </svg>
-            );
+        const CONFIG = {
+            API_URL: "https://script.google.com/macros/s/AKfycbzlhL86vAM7niocvLrwBQYT1xdG8Gns5WblTwEp8TAumkUPTVhKmPZSK8QXwzHhP_nd/exec",
+            MOCK_DATA: [
+                { id: "m1", nombre: "Cliente Ejemplo 1", ventas2025: 100, ventas2026: 200, productos: [], facturas: [] }
+            ]
         };
 
-        // --- CONSTANTS ---
-        const API_URL = "https://script.google.com/macros/s/AKfycbxSFMjSZqI8bf_bgMnm_mAZHAKaeQGhMfW-ejl8pM7fAQ-FSE_IIefuIak_LUJ1pdQmXw/exec";
-        const COLORS = {
-            year2024: "#4169E1", year2024Light: "#93c5fd",
-            year2025: "#9333EA", year2025Light: "#d8b4fe",
-            positive: "#10b981", negative: "#ef4444", grid: "#e2e8f0"
-        };
-        const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+        let state = { allData: [], selectedId: null, searchTerm: "", viewMode: 'february', isDemo: false, lang: 'es' };
 
-        // --- UTILS ---
-        const formatCurrency = (val, lang = 'es') => new Intl.NumberFormat(lang === 'es' ? 'es-MX' : 'fr-FR', { style: 'currency', currency: 'MXN' }).format(val);
-        const formatNumber = (val, lang = 'es') => new Intl.NumberFormat(lang === 'es' ? 'es-MX' : 'fr-FR', { maximumFractionDigits: 2 }).format(val);
-        const parseDate = (dateStr) => {
-            if (!dateStr) return new Date();
-            let s = String(dateStr); if (s.includes('T')) s = s.split('T')[0];
-            const parts = s.split('-');
-            if (parts.length === 3) return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-            return new Date(dateStr);
+        function t(key) { return translations[state.lang][key] || key; }
+
+        window.changeLanguage = (lang) => {
+            state.lang = lang;
+            document.getElementById('lang-es').classList.toggle('active', lang === 'es');
+            document.getElementById('lang-fr').classList.toggle('active', lang === 'fr');
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.textContent = t(key);
+            });
+            document.getElementById('search-input').placeholder = t('search_placeholder');
+            changeView(state.viewMode);
         };
 
-        // --- COMPONENTS ---
-        const App = () => {
-            const [data, setData] = useState([]);
-            const [loading, setLoading] = useState(true);
-            const [error, setError] = useState(null);
-            const [activeTab, setActiveTab] = useState('dashboard');
-            const [processedData, setProcessedData] = useState(null);
-            const [lang, setLang] = useState('es');
-            const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-            const contentRef = useRef(null);
-            const fullReportRef = useRef(null);
+        const formatCurrency = (val) => {
+            if (val === undefined || val === null) return '$0.00';
+            return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
+        };
 
-            useEffect(() => {
-                const browserLang = navigator.language || navigator.userLanguage;
-                if (browserLang.startsWith('fr')) setLang('fr'); else setLang('es');
-            }, []);
+        const formatPercent = (val) => {
+            if (!val || isNaN(val) || !isFinite(val)) return '-';
+            const sign = val > 0 ? '+' : '';
+            return `${sign}${val.toFixed(1)}%`;
+        };
 
-            const t = TRANSLATIONS[lang];
+        async function initApp() {
+            try {
+                const url = `${CONFIG.API_URL}?t=${Date.now()}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Error de red");
+                const text = await response.text();
+                if (text.includes("<!DOCTYPE")) throw new Error("Acceso denegado (HTML response)");
+                
+                state.allData = JSON.parse(text);
+                state.isDemo = false;
+            } catch (err) {
+                console.warn("Modo demo activo:", err);
+                state.allData = CONFIG.MOCK_DATA;
+                state.isDemo = true;
+                document.getElementById('status-bar').classList.remove('hidden');
+                document.getElementById('status-text').textContent = "Modo Demo Activado (Verifica conexión)";
+            } finally {
+                document.getElementById('list-loader').classList.add('hidden');
+                const userLang = navigator.language || navigator.userLanguage;
+                if (userLang.toLowerCase().startsWith('fr')) {
+                    changeLanguage('fr');
+                } else {
+                    changeLanguage('es');
+                }
+            }
+        }
 
-            useEffect(() => {
-                fetch(API_URL)
-                    .then(res => res.json())
-                    .then(jsonData => {
-                        let finalData = Array.isArray(jsonData) ? jsonData : jsonData.data || jsonData.items || [];
-                        const normalizedData = finalData.map(item => {
-                            const newItem = {};
-                            Object.keys(item).forEach(key => newItem[key.toLowerCase().trim().replace(/\s+/g, '_')] = item[key]);
-                            return newItem;
-                        });
-                        setData(normalizedData);
-                        processAllData(normalizedData);
-                        setLoading(false);
-                    })
-                    .catch(err => { console.error(err); setError(t.common.error); setLoading(false); });
-            }, [lang]); 
+        window.changeView = (mode) => {
+            state.viewMode = mode;
+            const btnFeb = document.getElementById('tab-february');
+            const btnBim = document.getElementById('tab-bimester');
+            if (mode === 'february') {
+                btnFeb.className = "flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active touch-manipulation";
+                btnBim.className = "flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive touch-manipulation";
+            } else {
+                btnFeb.className = "flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive touch-manipulation";
+                btnBim.className = "flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active touch-manipulation";
+            }
+            document.querySelectorAll('.header-year-2025').forEach(el => el.textContent = mode === 'bimester' ? t('col_total_2025') : t('col_feb_2025'));
+            document.querySelectorAll('.header-year-2026').forEach(el => el.textContent = mode === 'bimester' ? t('col_total_2026') : t('col_feb_2026'));
+            updateUI();
+            if (state.selectedId) {
+                const client = state.allData.find(c => c.id === state.selectedId);
+                if (client) renderDetail(client);
+            }
+        };
 
-            const processAllData = (rawData) => {
-                // Same processing logic as before
-                const monthlyData = Array(12).fill(0).map((_, i) => ({
-                    name: MONTHS[i], monthIndex: i,
-                    sales2024: 0, sales2025: 0, kg2024: 0, kg2025: 0,
-                    cost2024: 0, cost2025: 0, profit2024: 0, profit2025: 0
-                }));
-                const clients = {}; const recipes = {};
-                let totals = { sales2024: 0, sales2025: 0, kg2024: 0, kg2025: 0, profit2024: 0, profit2025: 0 };
+        function getClientValues(client) {
+            if (state.viewMode === 'bimester') {
+                return { v25: client.ventas2025, v26: client.ventas2026 };
+            } else {
+                const v25 = client.productos.reduce((sum, p) => sum + (p.v25_feb || 0), 0);
+                const v26 = client.productos.reduce((sum, p) => sum + (p.v26_feb || 0), 0);
+                return { v25, v26 };
+            }
+        }
 
-                rawData.forEach(item => {
-                    const date = parseDate(item.invoice_date);
-                    const year = date.getFullYear();
-                    const month = date.getMonth();
-                    const parseNum = (val) => {
-                        if (typeof val === 'number') return val; if (!val) return 0;
-                        const cleanStr = String(val).replace(/[$,]/g, ''); return isNaN(parseFloat(cleanStr)) ? 0 : parseFloat(cleanStr);
-                    };
-                    const sale = parseNum(item.item_sale);
-                    const kg = parseNum(item.item_coffee_weight_sum);
-                    const totalCost = parseNum(item.coffee_total_cost);
-                    const profit = sale - totalCost;
-                    const clientId = item.client_fiscal_id || "Desconocido";
-                    const recipeId = item.item_recipe || "Generico";
+        function updateUI() {
+            const processed = state.allData
+                .filter(c => c.nombre.toLowerCase().includes(state.searchTerm.toLowerCase()))
+                .map(c => {
+                    const vals = getClientValues(c);
+                    let growth = 0;
+                    let isNew = false;
 
-                    if (!clients[clientId]) clients[clientId] = { name: clientId, sales2024: 0, sales2025: 0 };
-                    if (!recipes[recipeId]) recipes[recipeId] = { name: recipeId, kg2024: 0, kg2025: 0, profit2025: 0, sales2025: 0 };
-
-                    if (year === 2024) {
-                        monthlyData[month].sales2024 += sale; monthlyData[month].kg2024 += kg;
-                        monthlyData[month].cost2024 += totalCost; monthlyData[month].profit2024 += profit;
-                        totals.sales2024 += sale; totals.kg2024 += kg; totals.profit2024 += profit;
-                        clients[clientId].sales2024 += sale; recipes[recipeId].kg2024 += kg;
-                    } else if (year === 2025) {
-                        monthlyData[month].sales2025 += sale; monthlyData[month].kg2025 += kg;
-                        monthlyData[month].cost2025 += totalCost; monthlyData[month].profit2025 += profit;
-                        totals.sales2025 += sale; totals.kg2025 += kg; totals.profit2025 += profit;
-                        clients[clientId].sales2025 += sale; recipes[recipeId].kg2025 += kg;
-                        recipes[recipeId].profit2025 += profit; recipes[recipeId].sales2025 += sale;
+                    if (vals.v25 > 0) {
+                        growth = ((vals.v26 - vals.v25) / vals.v25) * 100;
+                    } else if (vals.v26 > 0) {
+                        growth = 100;
+                        isNew = true;
+                    } else if (vals.v25 > 0 && vals.v26 === 0) {
+                        growth = -100;
                     }
+
+                    return { ...c, vals, growth, isNew };
                 });
 
-                monthlyData.forEach(m => {
-                    m.avgPrice2024 = m.kg2024 > 0 ? m.sales2024 / m.kg2024 : 0;
-                    m.avgCost2024 = m.kg2024 > 0 ? m.cost2024 / m.kg2024 : 0;
-                    m.avgPrice2025 = m.kg2025 > 0 ? m.sales2025 / m.kg2025 : 0;
-                    m.avgCost2025 = m.kg2025 > 0 ? m.cost2025 / m.kg2025 : 0;
-                });
+            const newClients = processed.filter(c => c.isNew).sort((a,b) => b.vals.v26 - a.vals.v26);
+            const highGrowth = processed.filter(c => !c.isNew && c.growth > 10).sort((a,b) => a.nombre.localeCompare(b.nombre));
+            const stableGrowth = processed.filter(c => !c.isNew && c.growth >= 0 && c.growth <= 10).sort((a,b) => a.nombre.localeCompare(b.nombre));
+            const negativeGrowth = processed.filter(c => !c.isNew && c.growth < 0).sort((a,b) => a.growth - b.growth);
 
-                totals.avgMarginPerKg2024 = totals.kg2024 > 0 ? totals.profit2024 / totals.kg2024 : 0;
-                totals.avgMarginPerKg2025 = totals.kg2025 > 0 ? totals.profit2025 / totals.kg2025 : 0;
-                totals.marginPct2024 = totals.sales2024 > 0 ? (totals.profit2024 / totals.sales2024) * 100 : 0;
-                totals.marginPct2025 = totals.sales2025 > 0 ? (totals.profit2025 / totals.sales2025) * 100 : 0;
+            const container = document.getElementById('clients-list');
+            Array.from(container.children).forEach(child => {
+                if (child.id !== 'list-loader') container.removeChild(child);
+            });
 
-                setProcessedData({
-                    monthly: monthlyData,
-                    clients: Object.values(clients).sort((a,b) => b.sales2025 - a.sales2025),
-                    recipes: Object.values(recipes).sort((a,b) => b.kg2025 - a.kg2025),
-                    totals: totals
-                });
-            };
+            renderGroup(container, newClients, t('group_new'), "text-purple-700 bg-purple-50 border-purple-100");
+            renderGroup(container, highGrowth, t('group_high'), "text-green-700 bg-green-50 border-green-100");
+            renderGroup(container, stableGrowth, t('group_stable'), "text-blue-700 bg-blue-50 border-blue-100");
+            renderGroup(container, negativeGrowth, t('group_neg'), "text-red-700 bg-red-50 border-red-100");
 
-            const generatePdfFromElement = async (element, filename) => {
-                const originalWidth = element.style.width;
-                element.style.width = '1200px'; 
-                try {
-                    const canvas = await html2canvas(element, { scale: 1.5, useCORS: true, logging: false, windowWidth: 1200, backgroundColor: '#f8fafc' });
-                    const imgData = canvas.toDataURL('image/png');
-                    const pdf = new jspdf.jsPDF({ orientation: 'portrait', unit: 'pt', format: 'letter' });
-                    const imgProps = pdf.getImageProperties(imgData);
-                    const pdfWidth = pdf.internal.pageSize.getWidth();
-                    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-                    const pageHeight = pdf.internal.pageSize.getHeight();
-                    let heightLeft = pdfHeight, position = 0;
-                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-                    heightLeft -= pageHeight;
-                    while (heightLeft >= 0) {
-                        position = heightLeft - pdfHeight;
-                        pdf.addPage();
-                        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-                        heightLeft -= pageHeight;
-                    }
-                    pdf.save(filename);
-                } catch (e) { console.error("PDF Error", e); } 
-                finally { element.style.width = originalWidth; }
-            };
+            document.getElementById('list-footer').textContent = `${processed.length} ${t('footer_listed')}`;
+        }
 
-            const handleDownloadCurrentView = async () => {
-                if (!contentRef.current) return;
-                const element = contentRef.current;
-                element.classList.add('pdf-mode');
-                await new Promise(r => setTimeout(r, 500)); 
-                await generatePdfFromElement(element, `Report_${activeTab}.pdf`);
-                element.classList.remove('pdf-mode');
-            };
+        function renderGroup(container, items, title, classes) {
+            if (items.length === 0) return;
+            const header = document.createElement('div');
+            header.className = `sticky top-0 z-10 px-4 py-1.5 border-y text-[10px] font-bold uppercase tracking-wide flex items-center justify-between backdrop-blur-sm bg-opacity-95 ${classes}`;
+            header.innerHTML = `<span>${title}</span><span class="bg-white/50 px-1.5 rounded-full">${items.length}</span>`;
+            container.appendChild(header);
+            items.forEach(item => {
+                const el = document.createElement('div');
+                const isSelected = item.id === state.selectedId;
+                let baseClass = "grid grid-cols-12 px-4 py-4 md:py-3 border-b border-slate-50 cursor-pointer transition-all duration-200 items-start relative group ";
+                if (isSelected) baseClass += "bg-blue-50/60 "; else baseClass += "hover:bg-slate-50 ";
+                el.className = baseClass;
+                el.onclick = () => { selectClient(item); };
+                let badge = '';
+                if (item.isNew) {
+                    badge = `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] mt-1 font-bold bg-purple-100 text-purple-700 border border-purple-200">✨ ${t('badge_new')}</span>`;
+                } else if (item.vals.v25 > 0 || item.vals.v26 > 0) {
+                    const color = item.growth >= 0 ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200';
+                    const icon = item.growth >= 0 ? '▲' : '▼';
+                    badge = `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] mt-1 font-medium border ${color}">${icon} ${Math.abs(item.growth).toFixed(1)}%</span>`;
+                }
+                const activeBorder = isSelected ? '<div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r"></div>' : '';
+                el.innerHTML = `${activeBorder}<div class="col-span-6 pr-2 pl-2"><p class="text-xs font-bold text-wrap ${isSelected ? 'text-blue-700' : 'text-slate-700'}">${item.nombre}</p>${badge}</div><div class="col-span-3 text-right text-[10px] sm:text-xs text-slate-500 font-medium font-mono truncate pt-0.5">${formatCurrency(item.vals.v25)}</div><div class="col-span-3 text-right text-[10px] sm:text-xs font-bold font-mono truncate pt-0.5 ${item.vals.v26 >= item.vals.v25 ? 'text-slate-800' : 'text-red-600'}">${formatCurrency(item.vals.v26)}</div>`;
+                container.appendChild(el);
+            });
+        }
 
-            const handleDownloadFullReport = async () => {
-                setIsGeneratingPdf(true);
-                await new Promise(r => setTimeout(r, 2500)); 
-                if (fullReportRef.current) await generatePdfFromElement(fullReportRef.current, `Informe_Completo_Ventas.pdf`);
-                setIsGeneratingPdf(false);
-            };
-
-            const toggleLang = () => setLang(prev => prev === 'es' ? 'fr' : 'es');
-
-            if (loading) return <div className="flex h-screen items-center justify-center bg-gray-50"><div className="text-center"><Icon name="loader" className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" /><h2 className="text-xl font-semibold text-gray-700">{t.common.loading}</h2></div></div>;
-            if (error || !processedData) return <div className="p-10 text-red-600 text-center">{error}</div>;
-
-            return (
-                <div className="flex h-screen overflow-hidden">
-                    <aside className="w-64 bg-slate-900 text-white flex flex-col shadow-xl z-20 hidden md:flex">
-                        <div className="p-6 border-b border-slate-800"><h1 className="text-xl font-bold tracking-tight text-blue-400 uppercase leading-tight">{t.title}</h1><p className="text-xs text-slate-400 mt-2">{t.subtitle}</p></div>
-                        <nav className="flex-1 p-4 space-y-2">
-                            <NavButton id="dashboard" label={t.tabs.dashboard} icon="dashboard" active={activeTab} set={setActiveTab} />
-                            <NavButton id="growth" label={t.tabs.growth} icon="trendingUp" active={activeTab} set={setActiveTab} />
-                            <NavButton id="margin" label={t.tabs.margin} icon="dollar" active={activeTab} set={setActiveTab} />
-                            <NavButton id="customers" label={t.tabs.customers} icon="users" active={activeTab} set={setActiveTab} />
-                            <NavButton id="analysis" label={t.tabs.analysis} icon="alert" active={activeTab} set={setActiveTab} />
-                        </nav>
-                        <div className="p-4 border-t border-slate-800"><button onClick={toggleLang} className="flex items-center gap-2 text-sm text-slate-400 hover:text-white w-full px-2 py-2 rounded hover:bg-slate-800 transition-colors"><Icon name="globe" className="w-4 h-4" /><span>{lang === 'es' ? 'Cambiar a Francés (FR)' : 'Passer en Espagnol (MX)'}</span></button></div>
-                        <div className="p-4 border-t border-slate-800 text-[10px] text-slate-500 text-center font-bold tracking-wider">{t.footer}</div>
-                    </aside>
-
-                    <div className="md:hidden fixed top-0 w-full bg-slate-900 text-white z-30 p-4 flex justify-between items-center shadow-md"><span className="font-bold">{t.title}</span><div className="flex gap-2"><button onClick={toggleLang} className="text-xs bg-slate-800 px-2 py-1 rounded">{lang.toUpperCase()}</button></div></div>
-                    <div className="md:hidden fixed bottom-0 w-full bg-white border-t border-gray-200 z-30 flex justify-around p-2">
-                         {['dashboard','growth','margin','customers','analysis'].map(tab => (
-                             <button key={tab} onClick={() => setActiveTab(tab)} className={`p-2 rounded-full ${activeTab === tab ? 'bg-blue-100 text-blue-600' : 'text-gray-500'}`}><Icon name={tab === 'analysis' ? 'alert' : (tab === 'customers' ? 'users' : (tab === 'margin' ? 'dollar' : (tab === 'growth' ? 'trendingUp' : 'dashboard')))} className="w-6 h-6"/></button>
-                         ))}
-                    </div>
-
-                    <main className="flex-1 overflow-y-auto bg-gray-50 relative pt-16 md:pt-0 pb-16 md:pb-0" ref={contentRef}>
-                        <div className="max-w-7xl mx-auto p-4 md:p-8">
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                                <div><h2 className="text-2xl md:text-3xl font-bold text-slate-800">{activeTab === 'analysis' ? t.strat.mainTitle : t.tabs[activeTab]}</h2><p className="text-slate-500 mt-1 text-sm">{t.sourceInfo}</p></div>
-                                <div className="flex gap-2"><button onClick={handleDownloadFullReport} disabled={isGeneratingPdf} className="hide-on-pdf flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow transition-all text-sm font-medium disabled:opacity-50">{isGeneratingPdf ? <Icon name="loader" className="w-4 h-4 animate-spin"/> : <Icon name="fileText" className="w-4 h-4" />}{isGeneratingPdf ? t.common.generating : t.common.downloadFull}</button></div>
-                            </div>
-                            {activeTab === 'dashboard' && <DashboardView data={processedData} t={t} lang={lang} />}
-                            {activeTab === 'growth' && <GrowthView data={processedData} t={t} lang={lang} />}
-                            {activeTab === 'margin' && <MarginView data={processedData} t={t} lang={lang} />}
-                            {activeTab === 'customers' && <CustomersView rawData={data} t={t} lang={lang} />}
-                            {activeTab === 'analysis' && <AnalysisView t={t} />}
-                        </div>
-                    </main>
-
-                    {isGeneratingPdf && (
-                        <div ref={fullReportRef} className="pdf-mode">
-                            <div className="mb-8 border-b pb-4"><h1 className="text-3xl font-bold text-slate-900">{t.title}</h1><p className="text-slate-500">{t.subtitle} - {t.footer}</p><p className="text-sm text-slate-400 mt-1">{new Date().toLocaleDateString()}</p></div>
-                            <div className="mb-8"><h2 className="text-2xl font-bold text-blue-600 mb-4">{t.tabs.dashboard}</h2><DashboardView data={processedData} t={t} lang={lang} /></div>
-                            <div className="page-break"><h2 className="text-2xl font-bold text-blue-600 mb-4">{t.tabs.growth}</h2><GrowthView data={processedData} t={t} lang={lang} /></div>
-                            <div className="page-break"><h2 className="text-2xl font-bold text-blue-600 mb-4">{t.tabs.margin}</h2><MarginView data={processedData} t={t} lang={lang} /></div>
-                            <div className="page-break"><h2 className="text-2xl font-bold text-blue-600 mb-4">{t.tabs.customers}</h2><CustomersView rawData={data} t={t} lang={lang} isPdfMode={true} /></div>
-                            <div className="page-break"><h2 className="text-2xl font-bold text-blue-600 mb-4">{t.strat.mainTitle}</h2><AnalysisView t={t} /></div>
-                        </div>
-                    )}
-                </div>
-            );
-        };
-
-        const NavButton = ({ id, label, icon, active, set }) => (
-            <button onClick={() => set(id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${active === id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
-                <Icon name={icon} className="w-5 h-5 flex-shrink-0" /><span className="font-medium text-sm">{label}</span>
-            </button>
-        );
-
-        const KPICard = ({ title, value, subValue, icon, isPositive }) => (
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-start justify-between relative overflow-hidden">
-                <div className="z-10 relative">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{title}</p><h3 className="text-2xl font-bold text-gray-800">{value}</h3>
-                    {subValue && <div className={`flex items-center gap-1 mt-2 text-xs font-bold ${isPositive ? 'text-green-600' : 'text-red-500'}`}><span>{isPositive ? '↑' : '↓'}</span><span>{subValue}</span></div>}
-                </div>
-                <div className={`p-3 rounded-lg flex-shrink-0 ${isPositive === false ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-600'}`}><Icon name={icon} className="w-6 h-6" /></div>
-            </div>
-        );
-
-        const InsightBox = ({ title, insights }) => (
-            <div className="bg-white border-l-4 border-blue-500 shadow-sm rounded-r-xl p-6 mt-8">
-                <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Icon name="dashboard" className="w-5 h-5 text-blue-500" />{title}</h4>
-                <ul className="space-y-3">{insights.map((insight, idx) => <li key={idx} className="flex items-start gap-3 text-sm text-slate-600"><span className="w-1.5 h-1.5 rounded-full bg-slate-300 mt-2 flex-shrink-0"></span>{insight}</li>)}</ul>
-            </div>
-        );
-
-        // --- DASHBOARD VIEW ---
-        const DashboardView = ({ data, t, lang }) => {
-            const { totals, monthly, clients } = data;
-            const salesGrowthPct = totals.sales2024 > 0 ? ((totals.sales2025 - totals.sales2024) / totals.sales2024) * 100 : 0;
-            const kgGrowthPct = totals.kg2024 > 0 ? ((totals.kg2025 - totals.kg2024) / totals.kg2024) * 100 : 0;
-            const marginDiff = totals.avgMarginPerKg2025 - totals.avgMarginPerKg2024;
-            const profitGrowthPct = totals.profit2024 > 0 ? ((totals.profit2025 - totals.profit2024) / totals.profit2024) * 100 : 0;
-            const insights = [`${t.kpis.growthRevenue}: ${salesGrowthPct.toFixed(1)}% ${t.common.vs} 2024.`, `${t.kpis.totalKg}: ${formatNumber(totals.kg2025 - totals.kg2024, lang)} kg (${kgGrowthPct > 0 ? '+' : ''}${kgGrowthPct.toFixed(1)}%).`, `${t.kpis.avgMargin}: ${marginDiff >= 0 ? '+' : ''}${formatCurrency(marginDiff, lang)} ${t.common.vs} 2024.`];
-
-            return (
-                <div className="animate-fade-in space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <KPICard title={`${t.kpis.totalRevenue} 2025`} value={formatCurrency(totals.sales2025, lang)} subValue={`${salesGrowthPct.toFixed(1)}%`} isPositive={salesGrowthPct > 0} icon="dollar" />
-                        <KPICard title={`${t.kpis.totalKg} 2025`} value={`${formatNumber(totals.kg2025, lang)} kg`} subValue={`${kgGrowthPct.toFixed(1)}%`} isPositive={kgGrowthPct > 0} icon="scale" />
-                        <KPICard title={t.kpis.avgMargin} value={formatCurrency(totals.avgMarginPerKg2025, lang)} subValue={`${formatCurrency(marginDiff, lang)}`} isPositive={marginDiff >= 0} icon="chart" />
-                        <KPICard title={t.kpis.totalProfit} value={formatCurrency(totals.profit2025, lang)} subValue={`${profitGrowthPct.toFixed(1)}%`} isPositive={profitGrowthPct > 0} icon="trendingUp" />
-                    </div>
-                    <div className="flex flex-col lg:flex-row gap-6">
-                        <div className="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 className="font-bold text-gray-700 mb-6">{t.charts.monthlyRevenue}</h3>
-                            <div className="h-72"><ResponsiveContainer><LineChart data={monthly}><CartesianGrid strokeDasharray="3 3" vertical={false}/><XAxis dataKey="name"/><YAxis/><Tooltip formatter={(v)=>formatCurrency(v,lang)}/><Legend/><Line type="monotone" dataKey="sales2024" stroke={COLORS.year2024}/><Line type="monotone" dataKey="sales2025" stroke={COLORS.year2025}/></LineChart></ResponsiveContainer></div>
-                        </div>
-                        <div className="w-full lg:w-2/5 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 className="font-bold text-gray-700 mb-6">{t.charts.topClients}</h3>
-                            <div className="overflow-x-auto"><table className="w-full text-xs md:text-sm text-left text-gray-500"><thead className="text-xs text-gray-700 uppercase bg-gray-50"><tr><th className="px-3 py-2 rounded-l-lg">{t.table.client}</th><th className="px-3 py-2 text-right">{t.table.sale}</th><th className="px-3 py-2 text-right rounded-r-lg">{t.table.growth}</th></tr></thead><tbody>{clients.slice(0, 5).map((client, idx) => { const growth = client.sales2024 > 0 ? ((client.sales2025 - client.sales2024) / client.sales2024) * 100 : 100; return (<tr key={idx} className="border-b hover:bg-gray-50"><td className="px-3 py-2 font-medium truncate max-w-[100px]" title={client.name}>{client.name}</td><td className="px-3 py-2 text-right">{formatCurrency(client.sales2025, lang)}</td><td className={`px-3 py-2 text-right font-bold ${growth >= 0 ? 'text-green-600' : 'text-red-500'}`}>{growth >= 0 ? '↑' : '↓'} {Math.abs(growth).toFixed(0)}%</td></tr>); })}</tbody></table></div>
-                        </div>
-                    </div>
-                    <InsightBox title={t.obs.general} insights={insights} />
-                </div>
-            );
-        };
-
-        const GrowthView = ({ data, t, lang }) => {
-            const { monthly, totals } = data;
-            const quarters = [{name:'Q1',months:[0,1,2]},{name:'Q2',months:[3,4,5]},{name:'Q3',months:[6,7,8]},{name:'Q4',months:[9,10,11]}].map(q => { const s24=q.months.reduce((a,m)=>a+monthly[m].sales2024,0); const s25=q.months.reduce((a,m)=>a+monthly[m].sales2025,0); return {name:q.name,sales2024:s24,sales2025:s25,pct:s24>0?((s25-s24)/s24)*100:0}; });
-            const insights = [`${t.kpis.growthRevenue}: +${formatCurrency(totals.sales2025 - totals.sales2024, lang)}.`];
-            return (
-                <div className="space-y-6 animate-fade-in">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><KPICard title={t.kpis.growthRevenue} value={formatCurrency(totals.sales2025 - totals.sales2024, lang)} isPositive={true} icon="dollar" /><KPICard title={t.kpis.growthVol} value={`${formatNumber(totals.kg2025 - totals.kg2024, lang)} kg`} isPositive={true} icon="scale" /></div>
-                    <div className="flex flex-col lg:flex-row gap-6">
-                        <div className="flex-1 bg-white p-6 rounded-xl shadow-sm"><h3 className="font-bold text-gray-700 mb-4">{t.charts.monthlyComp}</h3><div className="h-64"><ResponsiveContainer><BarChart data={monthly}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="name"/><YAxis/><Tooltip formatter={(v)=>formatCurrency(v,lang)}/><Bar dataKey="sales2024" fill={COLORS.year2024}/><Bar dataKey="sales2025" fill={COLORS.year2025}/></BarChart></ResponsiveContainer></div></div>
-                        <div className="flex-1 bg-white p-6 rounded-xl shadow-sm"><h3 className="font-bold text-gray-700 mb-4">{t.charts.quarterly}</h3><table className="w-full text-xs md:text-sm"><thead className="bg-gray-50 text-gray-600"><tr><th className="px-3 py-2 text-left">{t.table.q}</th><th className="px-3 py-2 text-right">2024</th><th className="px-3 py-2 text-right">2025</th><th className="px-3 py-2 text-right">{t.table.change}</th></tr></thead><tbody>{quarters.map((q,i)=>(<tr key={i} className="border-b"><td className="px-3 py-2 font-medium">{q.name}</td><td className="px-3 py-2 text-right">{formatCurrency(q.sales2024,lang)}</td><td className="px-3 py-2 text-right">{formatCurrency(q.sales2025,lang)}</td><td className={`px-3 py-2 text-right font-bold ${q.pct>=0?'text-green-600':'text-red-500'}`}>{q.pct.toFixed(1)}%</td></tr>))}</tbody></table></div>
-                    </div>
-                    <InsightBox title={t.obs.growth} insights={insights} />
-                </div>
-            );
-        };
-
-        const MarginView = ({ data, t, lang }) => {
-            const { monthly, totals } = data;
-            const [selectedYear, setSelectedYear] = useState('2025');
-            const marginChange = totals.avgMarginPerKg2025 - totals.avgMarginPerKg2024;
-            const marginPctChange = totals.marginPct2025 - totals.marginPct2024;
-            const insights = [`${t.kpis.avgMargin}: ${formatCurrency(totals.avgMarginPerKg2025, lang)}.`];
-            return (
-                <div className="space-y-6 animate-fade-in">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <KPICard title={t.kpis.avgMargin} value={formatCurrency(totals.avgMarginPerKg2025, lang)} subValue={formatCurrency(marginChange, lang)} isPositive={marginChange >= 0} icon="dollar" />
-                        <KPICard title={t.kpis.marginPct} value={`${totals.marginPct2025.toFixed(1)}%`} subValue={`${marginPctChange.toFixed(1)}%`} isPositive={marginPctChange >= 0} icon="chart" />
-                        <KPICard title={t.kpis.totalProfit} value={formatCurrency(totals.profit2025, lang)} isPositive={true} icon="trendingUp" />
-                    </div>
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative"><div className="flex justify-between items-center mb-6"><h3 className="font-bold text-gray-700">{t.charts.priceVsCost}</h3><div className="flex bg-gray-100 rounded-lg p-1"><button onClick={()=>setSelectedYear('2024')} className={`px-3 py-1 text-xs font-bold rounded-md ${selectedYear==='2024'?'bg-white shadow text-blue-600':''}`}>2024</button><button onClick={()=>setSelectedYear('2025')} className={`px-3 py-1 text-xs font-bold rounded-md ${selectedYear==='2025'?'bg-white shadow text-purple-600':''}`}>2025</button></div></div><div className="h-80"><ResponsiveContainer><AreaChart data={monthly}><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={selectedYear==='2025'?COLORS.year2025:COLORS.year2024} stopOpacity={0.2}/><stop offset="95%" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="name"/><YAxis/><Tooltip formatter={(v)=>formatCurrency(v,lang)}/><Area type="monotone" dataKey={`avgCost${selectedYear}`} stroke="#ef4444" fill="transparent" strokeDasharray="5 5"/><Area type="monotone" dataKey={`avgPrice${selectedYear}`} stroke={selectedYear==='2025'?COLORS.year2025:COLORS.year2024} fill="url(#g)"/></AreaChart></ResponsiveContainer></div></div>
-                    <InsightBox title={t.obs.margin} insights={insights} />
-                </div>
-            );
-        };
-
-        const CustomersView = ({ rawData, t, lang, isPdfMode }) => {
-            const [selectedYear, setSelectedYear] = useState('2025');
-            const [selectedMonth, setSelectedMonth] = useState('all');
-            const [groupBy, setGroupBy] = useState('fiscal_id');
-            const [sortConfig, setSortConfig] = useState({ key: 'profit', direction: 'desc' });
-            const handleSort = (key) => setSortConfig({ key, direction: sortConfig.key === key && sortConfig.direction === 'desc' ? 'asc' : 'desc' });
-            const getSortIcon = (key) => sortConfig.key !== key ? <span className="ml-1 text-gray-300">↕</span> : (sortConfig.direction === 'asc' ? <span className="ml-1 text-blue-600">↑</span> : <span className="ml-1 text-blue-600">↓</span>);
+        function selectClient(item) {
+            state.selectedId = item.id;
+            updateUI(); // Refrescar lista para selección visual
+            renderDetail(item);
             
-            const customerData = useMemo(() => {
-                const grouped = {};
-                rawData.forEach(item => {
-                    const date = parseDate(item.invoice_date);
-                    if (String(date.getFullYear()) !== selectedYear) return;
-                    if (selectedMonth !== 'all' && date.getMonth() !== parseInt(selectedMonth)) return;
-                    let key = groupBy === 'fiscal_id' ? (item.client_fiscal_id || "N/A") : (item.client_location || "N/A");
-                    if (!grouped[key]) grouped[key] = { name: key, totalRevenue: 0, totalCost: 0, totalKg: 0, invoiceCount: new Set() };
-                    const sale = parseFloat(String(item.item_sale).replace(/[$,]/g, '')) || 0;
-                    const cost = parseFloat(String(item.coffee_total_cost).replace(/[$,]/g, '')) || 0;
-                    const kg = parseFloat(String(item.item_coffee_weight_sum).replace(/[$,]/g, '')) || 0;
-                    grouped[key].totalRevenue += sale; grouped[key].totalCost += cost; grouped[key].totalKg += kg;
-                    if(item.invoice_number) grouped[key].invoiceCount.add(item.invoice_number);
-                });
-                return Object.values(grouped).map(g => ({ ...g, profit: g.totalRevenue - g.totalCost, avgPricePerKg: g.totalKg > 0 ? g.totalRevenue / g.totalKg : 0, marginPct: g.totalRevenue > 0 ? ((g.totalRevenue - g.totalCost) / g.totalRevenue) * 100 : 0, avgVolPerInvoice: g.totalKg / (g.invoiceCount.size || 1) })).sort((a,b) => {
-                    const valA = a[sortConfig.key], valB = b[sortConfig.key];
-                    if (sortConfig.key === 'name') return sortConfig.direction === 'asc' ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
-                    return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
-                });
-            }, [rawData, selectedYear, selectedMonth, groupBy, sortConfig]);
+            // MOSTRAR DETALLE EN MÓVIL
+            if (window.innerWidth < 768) {
+                document.getElementById('left-panel').classList.add('hidden');
+                document.getElementById('detail-panel').classList.remove('hidden', 'md:flex');
+                document.getElementById('detail-panel').classList.add('flex');
+            }
+        }
 
-            return (
-                <div className="space-y-6 animate-fade-in">
-                    {!isPdfMode && <div className="flex gap-4 mb-4"><button onClick={()=>setGroupBy(groupBy==='fiscal_id'?'location':'fiscal_id')} className="bg-blue-600 text-white px-3 py-1 rounded text-sm">{groupBy==='fiscal_id'?t.common.fiscalId:t.common.location}</button></div>}
-                    <div className="bg-white p-6 rounded-xl shadow-sm overflow-x-auto"><table className="w-full text-xs md:text-sm text-left"><thead className="bg-slate-50 text-slate-700 uppercase"><tr><th onClick={()=>handleSort('name')} className="px-4 py-3 cursor-pointer hover:bg-slate-100">{groupBy==='fiscal_id'?t.table.client:t.table.branch} {getSortIcon('name')}</th><th onClick={()=>handleSort('totalRevenue')} className="px-4 py-3 text-right cursor-pointer hover:bg-slate-100">{t.table.sale} {getSortIcon('totalRevenue')}</th><th onClick={()=>handleSort('profit')} className="px-4 py-3 text-right cursor-pointer hover:bg-slate-100">{t.table.profit} {getSortIcon('profit')}</th><th onClick={()=>handleSort('marginPct')} className="px-4 py-3 text-right cursor-pointer hover:bg-slate-100">{t.table.marginPct} {getSortIcon('marginPct')}</th><th onClick={()=>handleSort('totalKg')} className="px-4 py-3 text-right cursor-pointer hover:bg-slate-100">{t.table.totalVol} {getSortIcon('totalKg')}</th></tr></thead><tbody>{customerData.map((row,i) => (<tr key={i} className="border-b hover:bg-gray-50"><td className="px-4 py-2 font-medium truncate max-w-[200px]" title={row.name}>{row.name}</td><td className="px-4 py-2 text-right">{formatCurrency(row.totalRevenue, lang)}</td><td className="px-4 py-2 text-right text-green-600 font-bold">{formatCurrency(row.profit, lang)}</td><td className="px-4 py-2 text-right">{row.marginPct.toFixed(1)}%</td><td className="px-4 py-2 text-right">{formatNumber(row.totalKg, lang)}</td></tr>))}</tbody></table></div>
-                </div>
-            );
+        window.backToMobileList = () => {
+            // OCULTAR DETALLE Y MOSTRAR LISTA
+            document.getElementById('left-panel').classList.remove('hidden');
+            document.getElementById('detail-panel').classList.add('hidden');
+            document.getElementById('detail-panel').classList.remove('flex');
+            // Limpiar selección para feedback visual
+            state.selectedId = null;
+            updateUI();
+        }
+
+        function renderDetail(client) {
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('detail-content').classList.remove('hidden');
+            const vals = getClientValues(client);
+            document.getElementById('detail-title').textContent = client.nombre;
+            const subText = state.viewMode === 'bimester' ? t('detail_subtitle_bim') : t('detail_subtitle_feb');
+            document.getElementById('detail-subtitle').textContent = subText;
+            document.getElementById('total-2025').textContent = `Total: ${formatCurrency(vals.v25)}`;
+            document.getElementById('total-2026').textContent = `Total: ${formatCurrency(vals.v26)}`;
+            
+            // En móvil, podemos ocultar columnas de Ene/Feb si falta espacio, pero en desktop las mostramos
+            // Usamos clases CSS 'hidden md:table-cell' en HTML
+            
+            renderDetailTable('tbody-2025', client.productos, 2025);
+            renderDetailTable('tbody-2026', client.productos, 2026);
+        }
+
+        function renderDetailTable(tbodyId, products, year) {
+            const tbody = document.getElementById(tbodyId);
+            tbody.innerHTML = '';
+            const items = products.map(p => {
+                const prefix = year === 2026 ? 'v26' : 'v25';
+                const ene = p[`${prefix}_ene`] || 0;
+                const feb = p[`${prefix}_feb`] || 0;
+                const total = state.viewMode === 'bimester' ? (p[`${prefix}_total`] || (ene+feb)) : feb;
+                return { ...p, ene, feb, total };
+            }).filter(p => p.total > 0).sort((a,b) => b.total - a.total);
+
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-slate-400 italic">${t('no_records_year')} ${year}</td></tr>`;
+                return;
+            }
+
+            items.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 group border-b border-slate-50 last:border-0";
+                let growthCell = '';
+                if (year === 2026) {
+                    const p25 = getProductData(p, 2025);
+                    const base25 = state.viewMode === 'bimester' ? p25.total : p25.feb;
+                    let badge = '<span class="text-slate-300 text-xs">-</span>';
+                    if (base25 > 0) {
+                        const pct = ((p.total - base25) / base25) * 100;
+                        const color = pct >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+                        const icon = pct >= 0 ? '▲' : '▼';
+                        badge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs ${color} font-bold">${icon} ${Math.abs(pct).toFixed(1)}%</span>`;
+                    } else if (p.total > 0) {
+                        badge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-700 font-bold">${t('badge_new')}</span>`;
+                    }
+                    growthCell = `<td class="px-4 md:px-6 py-3 text-right">${badge}</td>`;
+                } else {
+                    growthCell = `<td class="px-4 md:px-6 py-3"></td>`;
+                }
+                tr.innerHTML = `<td class="px-4 md:px-6 py-3 font-medium text-slate-700 break-words w-5/12 text-xs sm:text-sm">${p.nombre}</td><td class="px-4 md:px-6 py-3 text-right font-mono text-slate-500 text-xs hidden md:table-cell">${formatCurrency(p.ene)}</td><td class="px-4 md:px-6 py-3 text-right font-mono text-slate-500 text-xs hidden md:table-cell">${formatCurrency(p.feb)}</td><td class="px-4 md:px-6 py-3 text-right font-mono font-bold text-slate-800 bg-slate-50/50 text-xs sm:text-sm">${formatCurrency(p.total)}</td>${growthCell}`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function getProductData(rawProd, year) {
+            const y = year === 2026 ? 'v26' : 'v25';
+            return { ene: rawProd[`${y}_ene`] || 0, feb: rawProd[`${y}_feb`] || 0, total: rawProd[`${y}_total`] || 0 };
+        }
+
+        // --- LÓGICA DE MODAL DE FACTURAS ---
+        window.openInvoiceModal = (year) => {
+            const client = state.allData.find(c => c.id === state.selectedId);
+            if (!client || !client.facturas) return;
+
+            const modal = document.getElementById('invoice-modal');
+            const tbody = document.getElementById('modal-tbody');
+            tbody.innerHTML = '';
+
+            const filteredInvoices = client.facturas.filter(f => {
+                if (f.anio !== year) return false;
+                if (state.viewMode === 'february' && f.mes !== 1) return false;
+                return true;
+            });
+
+            document.getElementById('modal-title').textContent = `${t('modal_title_prefix')} ${year}`;
+            document.getElementById('modal-subtitle').textContent = state.viewMode === 'bimester' ? t('tab_bimester') : t('tab_feb');
+
+            if (filteredInvoices.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="2" class="px-6 py-8 text-center text-slate-400 italic">${t('no_records')}</td></tr>`;
+                document.getElementById('modal-total').textContent = formatCurrency(0);
+                document.getElementById('modal-count').textContent = "0 facturas";
+            } else {
+                let total = 0;
+                filteredInvoices.sort((a,b) => b.monto - a.monto).forEach(f => {
+                    total += f.monto;
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 border-b border-slate-50";
+                    tr.innerHTML = `
+                        <td class="px-6 py-3 font-mono text-xs text-blue-600 font-bold">${f.numero}</td>
+                        <td class="px-6 py-3 text-right font-mono text-slate-700">${formatCurrency(f.monto)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                document.getElementById('modal-total').textContent = formatCurrency(total);
+                document.getElementById('modal-count').textContent = `${filteredInvoices.length} facturas`;
+            }
+
+            modal.classList.remove('hidden');
         };
 
-        // 5. STRATEGIC ANALYSIS VIEW (Exact Replica)
-        const AnalysisView = ({ t }) => {
-            const chart1Ref = useRef(null);
-            const chart2Ref = useRef(null);
-            const chart3Ref = useRef(null);
-
-            useEffect(() => {
-                const charts = [];
-                // Data from original HTML
-                const datosMensuales = {
-                    2024: { meses: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'], precio: [298.35, 284.85, 295.42, 286.2, 290.14, 293.09, 289.25, 286.07, 286.11, 286.16, 292.19, 295.89], costo: [129.44, 126.07, 126.11, 127.4, 127.7, 126.31, 126.21, 128.17, 125.9, 127.3, 128.99, 127.54] },
-                    2025: { precio: [304.86, 312.17, 311.82, 313.88, 326.22, 314.48, 327.47, 321.36, 321.65, 320.39, 321.45, 322.98], costo: [196.15, 194.48, 196.3, 193.58, 195.34, 193.85, 194.06, 196.4, 194.52, 194.86, 197.05, 196.06] }
-                };
-
-                // Chart 1
-                if (chart1Ref.current) {
-                    charts.push(new Chart(chart1Ref.current, {
-                        type: 'line',
-                        data: {
-                            labels: datosMensuales[2024].meses,
-                            datasets: [
-                                { label: 'Precio 2024', data: datosMensuales[2024].precio, borderColor: '#9d4edd', backgroundColor: 'rgba(157, 78, 221, 0.1)', borderWidth: 2, tension: 0.4, fill: true, pointRadius: 0 },
-                                { label: 'Costo 2024', data: datosMensuales[2024].costo, borderColor: '#fb8500', backgroundColor: 'rgba(251, 133, 0, 0.1)', borderWidth: 2, borderDash: [5, 5], tension: 0.4, fill: true, pointRadius: 0 },
-                                { label: 'Precio 2025', data: datosMensuales[2025].precio, borderColor: '#7b2cbf', backgroundColor: 'rgba(123, 44, 191, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointRadius: 0 },
-                                { label: 'Costo 2025', data: datosMensuales[2025].costo, borderColor: '#dc2626', backgroundColor: 'rgba(220, 38, 38, 0.1)', borderWidth: 3, borderDash: [5, 5], tension: 0.4, fill: true, pointRadius: 0 }
-                            ]
-                        },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-                    }));
-                }
-
-                // Chart 2
-                if (chart2Ref.current) {
-                    charts.push(new Chart(chart2Ref.current, {
-                        type: 'bar',
-                        data: {
-                            labels: ['Grano', 'Filtro', 'Espresso', 'Cold Brew'],
-                            datasets: [
-                                { label: '2024', data: [59.2, 56.1, 81.9, 82.1], backgroundColor: 'rgba(34, 197, 94, 0.7)' },
-                                { label: '2025', data: [33.3, 38.9, 63.9, 74.2], backgroundColor: 'rgba(220, 38, 38, 0.7)' }
-                            ]
-                        },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-                    }));
-                }
-
-                // Chart 3
-                if (chart3Ref.current) {
-                    charts.push(new Chart(chart3Ref.current, {
-                        type: 'bar',
-                        data: {
-                            labels: ['Actual', 'Conservador +15%', 'Moderado +25%', 'Agresivo +35%', 'Objetivo +44%'],
-                            datasets: [{
-                                label: 'Margen %', data: [39.8, 43.6, 47.1, 49.8, 57.2],
-                                backgroundColor: ['rgba(220, 38, 38, 0.7)', 'rgba(251, 133, 0, 0.7)', 'rgba(234, 179, 8, 0.7)', 'rgba(34, 197, 94, 0.7)', 'rgba(5, 150, 105, 0.7)']
-                            }]
-                        },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-                    }));
-                }
-
-                return () => charts.forEach(c => c.destroy());
-            }, []);
-
-            return (
-                <div className="strat-view animate-fade-in">
-                    <div className="container-like">
-                        
-                        {/* Header removed to avoid duplication */}
-                        
-                        <div className="alert-banner"><h2>{t.strat.alertTitle}</h2><p>{t.strat.alertDesc}</p><p style={{fontSize:'1em',marginTop:'10px'}}>{t.strat.alertSub}</p></div>
-                        
-                        <div className="metrics-grid">
-                            <div className="metric-card purple"><div className="metric-label">{t.strat.kpi1}</div><div className="metric-value">$126.31</div><div className="metric-change negative">{t.strat.kpi1Sub}</div></div>
-                            <div className="metric-card red"><div className="metric-label">{t.strat.kpi2}</div><div className="metric-value">39.8%</div><div className="metric-change negative">{t.strat.kpi2Sub}</div></div>
-                            <div className="metric-card green"><div className="metric-label">{t.strat.kpi3}</div><div className="metric-value">$10.95M</div><div className="metric-change negative">{t.strat.kpi3Sub}</div></div>
-                            <div className="metric-card orange"><div className="metric-label">{t.strat.kpi4}</div><div className="metric-value">$4.81M</div><div className="metric-change negative">{t.strat.kpi4Sub}</div></div>
-                        </div>
-
-                        <div className="chart-container"><div className="chart-title">{t.strat.chart1Title}</div><div className="chart-wrapper"><canvas ref={chart1Ref}></canvas></div></div>
-                        
-                        <div className="insight-box"><h3>{t.strat.insightTitle}</h3><p>{t.strat.insightDesc}</p></div>
-
-                        <div className="table-container">
-                            <div className="chart-title">{t.strat.table1Title}</div>
-                            <table>
-                                <thead><tr><th>{t.table.concept}</th><th>{t.table.price}</th><th>{t.table.cost}</th><th>{t.table.margin}</th><th>{t.table.marginPct}</th><th>{t.kpis.totalRevenue}</th></tr></thead>
-                                <tbody>
-                                    <tr><td><strong>2024</strong></td><td className="number">$290.62</td><td className="number">$124.35</td><td className="number positive-value">$166.27</td><td className="number positive-value">57.2%</td><td className="number">$22.1M</td></tr>
-                                    <tr className="highlight-row"><td><strong>2025</strong></td><td className="number">$317.75</td><td className="number">$191.44</td><td className="number negative-value">$126.31</td><td className="number negative-value">39.8%</td><td className="number">$27.5M</td></tr>
-                                    <tr><td><strong>{t.strat.change}</strong></td><td className="number positive-value">+9.4%</td><td className="number negative-value">+53.3%</td><td className="number negative-value">-24.1%</td><td className="number negative-value">-17.4 pts</td><td className="number positive-value">+24.6%</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <h2 className="section-title">{t.strat.chart2Title}</h2>
-                        <div className="chart-container"><div className="chart-wrapper"><canvas ref={chart2Ref}></canvas></div></div>
-
-                        <div className="table-container">
-                            <div className="chart-title">{t.strat.table2Title}</div>
-                            <table>
-                                <thead><tr><th>{t.table.client}</th><th>{t.table.sale}</th><th>{t.table.marginAbs}</th><th>{t.table.marginPct}</th><th>{t.table.opportunity}</th></tr></thead>
-                                <tbody>
-                                    <tr><td>Hilton / CONRAD - Tulum</td><td className="number">$3.23M</td><td className="number">$1.18M</td><td className="number negative-value">36.6%</td><td>🔴 {t.table.opportunity.includes('Oportunidad') ? 'Crítico' : 'Critique'}</td></tr>
-                                    <tr><td>Hilton - Mar Caribe</td><td className="number">$1.97M</td><td className="number">$706K</td><td className="number negative-value">35.9%</td><td>🔴 {t.table.opportunity.includes('Oportunidad') ? 'Crítico' : 'Critique'}</td></tr>
-                                    <tr><td>Ojo de Agua - CEDIS</td><td className="number">$1.57M</td><td className="number">$800K</td><td className="number positive-value">50.9%</td><td>🟢 {t.table.opportunity.includes('Oportunidad') ? 'Saludable' : 'Sain'}</td></tr>
-                                    <tr><td>Sofitel CDMX</td><td className="number">$1.45M</td><td className="number">$760K</td><td className="number positive-value">52.2%</td><td>🟢 {t.table.opportunity.includes('Oportunidad') ? 'Saludable' : 'Sain'}</td></tr>
-                                    <tr><td>Hyatt - Mexico City</td><td className="number">$1.66M</td><td className="number">$668K</td><td className="number" style={{color:'#d97706'}}>40.3%</td><td>🟡 {t.table.opportunity.includes('Oportunidad') ? 'Ajustar' : 'Ajuster'}</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <h2 className="section-title">{t.strat.chart3Title}</h2>
-                        <div className="chart-container"><div className="chart-wrapper" style={{height:'300px'}}><canvas ref={chart3Ref}></canvas></div></div>
-
-                        <h2 className="section-title">{t.strat.planTitle}</h2>
-                        <div className="priority-section priority-1">
-                            <div className="priority-header"><span className="priority-badge">{t.strat.p1}</span><h3>{t.strat.p1Title}</h3></div>
-                            <div className="action-item"><div className="action-number">1</div><div className="action-content"><h4>{t.strat.steps[0].t}</h4><p>{t.strat.steps[0].d}</p></div></div>
-                            <div className="action-item"><div className="action-number">2</div><div className="action-content"><h4>{t.strat.steps[1].t}</h4><ul>{t.strat.steps[1].l.map(x=><li key={x}>{x}</li>)}</ul></div></div>
-                            <div className="action-item"><div className="action-number">3</div><div className="action-content"><h4>{t.strat.steps[2].t}</h4><ul>{t.strat.steps[2].l.map(x=><li key={x}>{x}</li>)}</ul></div></div>
-                        </div>
-
-                        <div className="priority-section priority-2">
-                            <div className="priority-header"><span className="priority-badge">{t.strat.p2}</span><h3>{t.strat.p2Title}</h3></div>
-                            {[3,4,5].map(i=><div key={i} className="action-item"><div className="action-number">{i+1}</div><div className="action-content"><h4>{t.strat.steps[i].t}</h4><p>{t.strat.steps[i].d}</p></div></div>)}
-                        </div>
-
-                        <div className="priority-section priority-3">
-                            <div className="priority-header"><span className="priority-badge">{t.strat.p3}</span><h3>{t.strat.p3Title}</h3></div>
-                            {[6,7].map(i=><div key={i} className="action-item"><div className="action-number">{i+1}</div><div className="action-content"><h4>{t.strat.steps[i].t}</h4><p>{t.strat.steps[i].d}</p></div></div>)}
-                        </div>
-
-                        <div className="priority-section control">
-                            <div className="priority-header"><span className="priority-badge control-badge">{t.strat.ctrl}</span><h3>{t.strat.ctrlTitle}</h3></div>
-                            {[8,9].map(i=><div key={i} className="action-item"><div className="action-number">{i+1}</div><div className="action-content"><h4>{t.strat.steps[i].t}</h4><p>{t.strat.steps[i].d}</p></div></div>)}
-                        </div>
-
-                        <div className="timeline-section">
-                            <h3 style={{textAlign:'center',color:'#7b2cbf',marginBottom:'30px'}}>{t.strat.timelineTitle}</h3>
-                            <div className="timeline">
-                                <div className="timeline-item"><div className="timeline-marker week1-2">1</div><div className="timeline-content"><h4>{t.strat.time.prep} ({t.strat.time.w1})</h4><ul>{t.strat.time.l1.map(x=><li key={x}>{x}</li>)}</ul></div></div>
-                                <div className="timeline-item"><div className="timeline-content"><h4>{t.strat.time.exec} ({t.strat.time.w3})</h4><ul>{t.strat.time.l2.map(x=><li key={x}>{x}</li>)}</ul></div><div className="timeline-marker week3-4">2</div></div>
-                                <div className="timeline-item"><div className="timeline-marker month2">3</div><div className="timeline-content"><h4>{t.strat.time.imp} ({t.strat.time.m2})</h4><ul>{t.strat.time.l3.map(x=><li key={x}>{x}</li>)}</ul></div></div>
-                                <div className="timeline-item"><div className="timeline-content"><h4>{t.strat.time.eval} ({t.strat.time.m3})</h4><ul>{t.strat.time.l4.map(x=><li key={x}>{x}</li>)}</ul></div><div className="timeline-marker month3">4</div></div>
-                            </div>
-                        </div>
-
-                        <div className="final-warning"><h3>{t.strat.warnTitle}</h3><p>{t.strat.warnDesc}</p></div>
-                    </div>
-                </div>
-            );
+        window.closeModal = () => {
+            document.getElementById('invoice-modal').classList.add('hidden');
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        document.getElementById('invoice-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'invoice-modal') closeModal();
+        });
+
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            state.searchTerm = e.target.value;
+            updateUI();
+        });
+
+        initApp();
     </script>
 </body>
 </html>
