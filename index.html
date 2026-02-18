@@ -4,28 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dashboard Comercial</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF para generar reportes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        @keyframes fade-in {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
         
-        .tab-active { 
-            background-color: #1e3a8a; 
-            color: white; 
-            border: 2px solid #1e3a8a; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
+        .tab-active { background-color: #1e3a8a; color: white; border: 2px solid #1e3a8a; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         .tab-inactive { background-color: white; color: #64748b; border: 2px solid #cbd5e1; }
         .tab-inactive:hover { background-color: #f1f5f9; color: #334155; border-color: #94a3b8; }
 
+        .metric-btn.active { background-color: #0f172a; color: white; font-weight: bold; border-color: #0f172a; }
+        .metric-btn { background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; transition: all 0.2s; }
+        
         .lang-btn { opacity: 0.6; filter: grayscale(100%); transition: all 0.2s; }
         .lang-btn.active { opacity: 1; filter: grayscale(0%); transform: scale(1.1); font-weight: bold; text-decoration: underline; text-decoration-color: #2563eb; text-underline-offset: 4px; }
         
@@ -49,7 +49,6 @@
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            
             <div class="flex-1 overflow-y-auto custom-scrollbar p-0">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-50 text-xs uppercase text-slate-500 sticky top-0 border-b border-slate-200 shadow-sm">
@@ -58,12 +57,9 @@
                             <th class="px-6 py-3 font-semibold text-right" data-i18n="th_amount">Monto</th>
                         </tr>
                     </thead>
-                    <tbody id="modal-tbody" class="divide-y divide-slate-100 text-slate-700">
-                        <!-- Contenido dinámico -->
-                    </tbody>
+                    <tbody id="modal-tbody" class="divide-y divide-slate-100 text-slate-700"></tbody>
                 </table>
             </div>
-            
             <div class="p-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex justify-between items-center">
                 <span class="text-xs text-slate-500" id="modal-count"></span>
                 <span class="text-sm font-bold text-slate-800" id="modal-total"></span>
@@ -79,13 +75,13 @@
 
     <div class="flex flex-1 overflow-hidden relative" id="main-container">
         
-        <!-- PANEL IZQUIERDO (LISTA) -->
+        <!-- PANEL IZQUIERDO -->
         <div id="left-panel" class="w-full md:w-5/12 lg:w-1/3 bg-white border-r border-slate-200 flex flex-col shadow-xl z-20 absolute inset-0 md:relative transition-transform duration-300">
             <div class="bg-slate-50 border-b border-slate-200 p-4 pb-2">
-                <div class="flex justify-between items-start mb-4">
+                <div class="flex justify-between items-start mb-3">
                     <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2 max-w-[65%] leading-tight" data-i18n="dashboard_title">
                         <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                        Dashboard Comercial
+                        Dashboard
                     </h2>
                     <div class="flex gap-2 bg-white px-2 py-1 rounded-full border border-slate-200 shadow-sm flex-shrink-0">
                         <button onclick="changeLanguage('es')" id="lang-es" class="lang-btn active text-xs flex items-center gap-1"><span>MX</span> 🇲🇽</button>
@@ -93,23 +89,40 @@
                         <button onclick="changeLanguage('fr')" id="lang-fr" class="lang-btn text-xs flex items-center gap-1"><span>FR</span> 🇫🇷</button>
                     </div>
                 </div>
+
+                <div class="flex bg-slate-200 p-1 rounded-lg mb-3 shadow-inner">
+                    <button onclick="changeMetric('weight')" id="metric-weight" class="metric-btn active flex-1 py-1.5 rounded-md text-xs flex items-center justify-center gap-1.5 shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>
+                        <span data-i18n="metric_kg">Consumo (KG)</span>
+                    </button>
+                    <button onclick="changeMetric('money')" id="metric-money" class="metric-btn flex-1 py-1.5 rounded-md text-xs flex items-center justify-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span data-i18n="metric_money">Facturación ($)</span>
+                    </button>
+                </div>
                 
-                <!-- PESTAÑAS (MÁS GRANDES PARA TOUCH) -->
                 <div class="flex gap-2 mb-3">
-                    <button onclick="changeView('february')" id="tab-february" class="flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active touch-manipulation">
+                    <button onclick="changeView('february')" id="tab-february" class="flex-1 py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active touch-manipulation">
                         <span data-i18n="tab_feb">Solo Febrero</span><br/><span class="font-normal opacity-80 text-[10px] md:text-[9px]" data-i18n="tab_feb_sub">(Comparativo Mes)</span>
                     </button>
-                    <button onclick="changeView('bimester')" id="tab-bimester" class="flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive touch-manipulation">
+                    <button onclick="changeView('bimester')" id="tab-bimester" class="flex-1 py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive touch-manipulation">
                         <span data-i18n="tab_bimester">1er Bimestre</span><br/><span class="font-normal opacity-80 text-[10px] md:text-[9px]" data-i18n="tab_bimester_sub">(Ene + Feb)</span>
                     </button>
                 </div>
 
                 <div class="relative mt-2">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
-                    <input type="text" id="search-input" placeholder="Buscar cliente..." class="w-full pl-9 pr-3 py-3 md:py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all shadow-sm">
+                    <input type="text" id="search-input" placeholder="Buscar cliente..." class="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all shadow-sm">
+                </div>
+
+                <div class="mt-2 px-1">
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" id="hide-small-check" class="form-checkbox h-3.5 w-3.5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 transition-colors" checked onchange="toggleHideSmall(this.checked)">
+                        <span class="text-xs text-slate-500 group-hover:text-slate-700 transition-colors select-none" data-i18n="hide_small_label">Ocultar clientes con consumos pequeños</span>
+                    </label>
                 </div>
             </div>
-            <!-- ENCABEZADOS -->
+
             <div class="grid grid-cols-12 px-4 py-3 bg-slate-100 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider sticky top-0 z-10">
                 <div class="col-span-6 pl-1" data-i18n="col_client">Cliente</div>
                 <div class="col-span-3 text-right header-year-2025">2025</div>
@@ -126,8 +139,6 @@
 
         <!-- PANEL DERECHO (DETALLE) -->
         <div id="detail-panel" class="w-full md:w-7/12 lg:w-2/3 flex flex-col h-full bg-slate-100 overflow-y-auto p-4 md:p-6 gap-6 custom-scrollbar absolute inset-0 md:relative z-30 hidden md:flex">
-            
-            <!-- BOTÓN VOLVER (SOLO MÓVIL) -->
             <button onclick="backToMobileList()" class="md:hidden flex items-center gap-2 text-slate-500 hover:text-blue-600 font-medium mb-2 w-fit">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                 <span data-i18n="back_list">Volver a la lista</span>
@@ -140,7 +151,14 @@
             
             <div id="detail-content" class="hidden flex-col gap-6 animate-fade-in pb-8">
                 <div class="flex flex-col border-b border-slate-200 pb-4">
-                    <h1 id="detail-title" class="text-xl md:text-3xl font-bold text-slate-800 break-words leading-tight"></h1>
+                    <div class="flex justify-between items-start">
+                        <h1 id="detail-title" class="text-xl md:text-3xl font-bold text-slate-800 break-words leading-tight"></h1>
+                        <!-- BOTÓN PDF -->
+                        <button onclick="downloadPDF()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded shadow-md flex items-center gap-1 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                            PDF
+                        </button>
+                    </div>
                     <p id="detail-subtitle" class="text-sm text-slate-500 mt-1"></p>
                 </div>
 
@@ -148,13 +166,13 @@
                 <div class="bg-white rounded-xl shadow-sm border border-blue-200 ring-2 ring-blue-50 overflow-hidden">
                     <div class="bg-blue-50 px-4 md:px-6 py-3 border-b border-blue-100 flex flex-wrap justify-between items-center sticky top-0 z-20 gap-2">
                         <div class="flex items-center gap-3">
-                            <h3 class="font-bold text-blue-900 text-sm"><span data-i18n="fact_2026">Facturación 2026</span></h3>
+                            <h3 class="font-bold text-blue-900 text-sm"><span id="header-2026">2026</span></h3>
                             <button onclick="openInvoiceModal(2026)" class="text-[10px] bg-white border border-blue-300 hover:bg-blue-50 text-blue-700 px-2 py-1 rounded shadow-sm flex items-center transition-colors active:scale-95">
                                 <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                 <span data-i18n="btn_invoices">Ver Facturas</span>
                             </button>
                         </div>
-                        <span id="total-2026" class="bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded font-mono font-bold"></span>
+                        <div id="total-2026"></div>
                     </div>
                     <div class="overflow-auto max-h-[350px] custom-scrollbar">
                         <table class="w-full text-left text-sm relative">
@@ -176,13 +194,13 @@
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     <div class="bg-slate-50 px-4 md:px-6 py-3 border-b border-slate-200 flex flex-wrap justify-between items-center sticky top-0 z-20 gap-2">
                         <div class="flex items-center gap-3">
-                            <h3 class="font-bold text-slate-700 text-sm"><span data-i18n="fact_2025">Facturación 2025</span></h3>
+                            <h3 class="font-bold text-slate-700 text-sm"><span id="header-2025">2025</span></h3>
                             <button onclick="openInvoiceModal(2025)" class="text-[10px] bg-white border border-slate-300 hover:bg-slate-100 text-slate-600 px-2 py-1 rounded shadow-sm flex items-center transition-colors active:scale-95">
                                 <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                 <span data-i18n="btn_invoices">Ver Facturas</span>
                             </button>
                         </div>
-                        <span id="total-2025" class="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded font-mono font-bold"></span>
+                        <div id="total-2025"></div>
                     </div>
                     <div class="overflow-auto max-h-[350px] custom-scrollbar">
                         <table class="w-full text-left text-sm relative">
@@ -206,6 +224,7 @@
 
     <!-- LÓGICA DE NEGOCIO -->
     <script>
+        // --- DICCIONARIO ---
         const translations = {
             es: {
                 dashboard_title: "Dashboard Comercial",
@@ -213,7 +232,10 @@
                 tab_bimester_sub: "(Ene + Feb)",
                 tab_feb: "Solo Febrero",
                 tab_feb_sub: "(Comparativo Mes)",
+                metric_kg: "Consumo (KG)",
+                metric_money: "Facturación ($)",
                 search_placeholder: "Buscar cliente...",
+                hide_small_label: "Ocultar clientes con consumos pequeños",
                 col_client: "Cliente",
                 col_total_2025: "Total 2025",
                 col_total_2026: "Total 2026",
@@ -224,8 +246,10 @@
                 empty_state: "Selecciona un cliente para ver su desglose",
                 detail_subtitle_bim: "Comparativo Primer Bimestre (Ene + Feb)",
                 detail_subtitle_feb: "Comparativo Mensual (Febrero)",
-                fact_2025: "Facturación 2025",
-                fact_2026: "Facturación 2026",
+                header_cons_2025: "Consumo 2025",
+                header_cons_2026: "Consumo 2026",
+                header_fact_2025: "Facturación 2025",
+                header_fact_2026: "Facturación 2026",
                 col_prod: "Producto",
                 col_jan: "Enero",
                 col_feb: "Febrero",
@@ -243,7 +267,26 @@
                 modal_title_prefix: "Facturas",
                 th_invoice: "# Factura",
                 th_amount: "Monto",
-                back_list: "Volver a la lista"
+                back_list: "Volver a la lista",
+                // PDF KEYS
+                pdf_title: "Reporte de Desempeño Comercial",
+                pdf_client: "CLIENTE:",
+                pdf_period: "PERIODO:",
+                pdf_gen_date: "Fecha de generación:",
+                pdf_sec_invoices: "DETALLE DE FACTURAS",
+                pdf_col_date: "Fecha",
+                pdf_col_inv: "Factura",
+                pdf_col_desc: "Descripción",
+                pdf_col_qty: "Cant.",
+                pdf_col_unit: "Precio U.",
+                pdf_col_total: "Total",
+                pdf_sec_varieties: "RESUMEN POR VARIEDAD (KG)",
+                pdf_col_var: "Variedad",
+                pdf_col_kg: "Total KG",
+                pdf_sec_analysis: "ANÁLISIS DE DESEMPEÑO",
+                pdf_growth_gen: "Crecimiento General:",
+                pdf_alert_title: "⚠️ PRODUCTOS CON CAÍDA CRÍTICA (>10%)",
+                pdf_alert_msg: "Se recomienda revisar el consumo de los siguientes productos:"
             },
             fr: {
                 dashboard_title: "Tableau de Bord Commercial",
@@ -251,7 +294,10 @@
                 tab_bimester_sub: "(Jan + Fév)",
                 tab_feb: "Février Uniq.",
                 tab_feb_sub: "(Comparatif Mois)",
+                metric_kg: "Conso. (KG)",
+                metric_money: "Facturation ($)",
                 search_placeholder: "Rechercher client...",
+                hide_small_label: "Masquer les clients à faible consommation",
                 col_client: "Client",
                 col_total_2025: "Total 2025",
                 col_total_2026: "Total 2026",
@@ -262,8 +308,10 @@
                 empty_state: "Sélectionnez un client pour voir les détails",
                 detail_subtitle_bim: "Comparatif 1er Bimestre (Jan + Fév)",
                 detail_subtitle_feb: "Comparatif Mensuel (Février)",
-                fact_2025: "Facturation 2025",
-                fact_2026: "Facturation 2026",
+                header_cons_2025: "Consommation 2025",
+                header_cons_2026: "Consommation 2026",
+                header_fact_2025: "Facturation 2025",
+                header_fact_2026: "Facturation 2026",
                 col_prod: "Produit",
                 col_jan: "Janvier",
                 col_feb: "Février",
@@ -281,18 +329,46 @@
                 modal_title_prefix: "Factures",
                 th_invoice: "# Facture",
                 th_amount: "Montant",
-                back_list: "Retour à la liste"
+                back_list: "Retour à la liste",
+                // PDF KEYS
+                pdf_title: "Rapport de Performance Commerciale",
+                pdf_client: "CLIENT:",
+                pdf_period: "PÉRIODE:",
+                pdf_gen_date: "Date de génération:",
+                pdf_sec_invoices: "DÉTAIL DES FACTURES",
+                pdf_col_date: "Date",
+                pdf_col_inv: "Facture",
+                pdf_col_desc: "Description",
+                pdf_col_qty: "Qté.",
+                pdf_col_unit: "Prix U.",
+                pdf_col_total: "Total",
+                pdf_sec_varieties: "RÉSUMÉ PAR VARIÉTÉ (KG)",
+                pdf_col_var: "Variété",
+                pdf_col_kg: "Total KG",
+                pdf_sec_analysis: "ANALYSE DE PERFORMANCE",
+                pdf_growth_gen: "Croissance Générale:",
+                pdf_alert_title: "⚠️ PRODUITS EN BAISSE CRITIQUE (>10%)",
+                pdf_alert_msg: "Il est recommandé de vérifier la consommation des produits suivants:"
             }
         };
 
         const CONFIG = {
-            API_URL: "https://script.google.com/macros/s/AKfycbzlhL86vAM7niocvLrwBQYT1xdG8Gns5WblTwEp8TAumkUPTVhKmPZSK8QXwzHhP_nd/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycby-LHBHTiAdtRFn9FLY0urdS1XYzVPbTXiUFdYWC_Jm7tD7r06-9MnhtNspbBxnGgeR/exec",
             MOCK_DATA: [
-                { id: "m1", nombre: "Cliente Ejemplo 1", ventas2025: 100, ventas2026: 200, productos: [], facturas: [] }
+                { id: "m1", nombre: "Cliente Ejemplo 1", ventas2025: 100, ventas2026: 200, peso2025: 50, peso2026: 100, productos: [], facturas: [] }
             ]
         };
 
-        let state = { allData: [], selectedId: null, searchTerm: "", viewMode: 'february', isDemo: false, lang: 'es' };
+        let state = { 
+            allData: [], 
+            selectedId: null, 
+            searchTerm: "", 
+            viewMode: 'february', 
+            metricMode: 'weight',
+            isDemo: false, 
+            lang: 'es',
+            hideSmall: true
+        };
 
         function t(key) { return translations[state.lang][key] || key; }
 
@@ -305,112 +381,282 @@
                 el.textContent = t(key);
             });
             document.getElementById('search-input').placeholder = t('search_placeholder');
-            changeView(state.viewMode);
+            updateUI();
+            if(state.selectedId) {
+                const client = state.allData.find(c => c.id === state.selectedId);
+                if(client) renderDetail(client);
+            }
         };
 
-        const formatCurrency = (val) => {
-            if (val === undefined || val === null) return '$0.00';
-            return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
-        };
+        const formatCurrency = (val) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val || 0);
+        const formatWeight = (val) => new Intl.NumberFormat('es-MX', { maximumFractionDigits: 1 }).format(val || 0) + ' kg';
+        const formatPercent = (val) => `${val > 0 ? '+' : ''}${val.toFixed(1)}%`;
 
-        const formatPercent = (val) => {
-            if (!val || isNaN(val) || !isFinite(val)) return '-';
-            const sign = val > 0 ? '+' : '';
-            return `${sign}${val.toFixed(1)}%`;
-        };
+        function getDualValueHTML(valMoney, valWeight, align = 'text-right') {
+            const moneyStr = formatCurrency(valMoney);
+            const weightStr = formatWeight(valWeight);
+            if (state.metricMode === 'weight') {
+                return `<div class="flex flex-col ${align}"><span class="font-bold text-slate-800 text-[11px] md:text-xs">${weightStr}</span><span class="text-[9px] text-slate-400 font-normal">${moneyStr}</span></div>`;
+            } else {
+                return `<div class="flex flex-col ${align}"><span class="font-bold text-slate-800 text-[11px] md:text-xs">${moneyStr}</span><span class="text-[9px] text-slate-400 font-normal">${weightStr}</span></div>`;
+            }
+        }
 
         async function initApp() {
             try {
                 const url = `${CONFIG.API_URL}?t=${Date.now()}`;
                 const response = await fetch(url);
-                if (!response.ok) throw new Error("Error de red");
+                if (!response.ok) throw new Error("Error");
                 const text = await response.text();
-                if (text.includes("<!DOCTYPE")) throw new Error("Acceso denegado (HTML response)");
-                
                 state.allData = JSON.parse(text);
                 state.isDemo = false;
             } catch (err) {
-                console.warn("Modo demo activo:", err);
+                console.warn(err);
                 state.allData = CONFIG.MOCK_DATA;
                 state.isDemo = true;
                 document.getElementById('status-bar').classList.remove('hidden');
-                document.getElementById('status-text').textContent = "Modo Demo Activado (Verifica conexión)";
+                document.getElementById('status-text').textContent = "Modo Demo";
             } finally {
                 document.getElementById('list-loader').classList.add('hidden');
                 const userLang = navigator.language || navigator.userLanguage;
-                if (userLang.toLowerCase().startsWith('fr')) {
-                    changeLanguage('fr');
-                } else {
-                    changeLanguage('es');
-                }
+                if (userLang.toLowerCase().startsWith('fr')) changeLanguage('fr');
+                else changeLanguage('es');
+                updateHeaders();
             }
         }
+
+        // --- PDF GENERATION LOGIC ---
+        window.downloadPDF = () => {
+            const { jsPDF } = window.jspdf;
+            const client = state.allData.find(c => c.id === state.selectedId);
+            if (!client || !client.transacciones) return;
+
+            const doc = new jsPDF();
+            const year = 2026; 
+            
+            // --- HEADER ---
+            doc.setFontSize(18);
+            doc.setTextColor(30, 58, 138); 
+            doc.text(t('pdf_title'), 14, 20);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`${t('pdf_gen_date')} ${new Date().toLocaleDateString()}`, 14, 28);
+
+            // --- CLIENT INFO ---
+            doc.setDrawColor(200);
+            doc.line(14, 32, 196, 32);
+            
+            doc.setFontSize(12);
+            doc.setTextColor(0);
+            doc.text(`${t('pdf_client')} ${client.nombre}`, 14, 40);
+            const periodText = state.viewMode === 'bimester' ? t('tab_bimester') : t('tab_feb');
+            doc.text(`${t('pdf_period')} ${periodText} ${year}`, 14, 46);
+
+            // --- 1. TABLA DETALLE FACTURAS ---
+            doc.setFontSize(11);
+            doc.setTextColor(30, 58, 138);
+            doc.text(t('pdf_sec_invoices'), 14, 58);
+
+            // Filtrar transacciones según vista
+            const transactions = client.transacciones.filter(t => {
+                if (t.anio !== year) return false;
+                if (state.viewMode === 'february' && t.mes !== 1) return false;
+                return true;
+            });
+
+            const bodyData = transactions.map(row => [
+                row.fecha,
+                row.factura,
+                row.producto,
+                row.cantidad,
+                formatCurrency(row.precioU),
+                formatCurrency(row.total)
+            ]);
+
+            doc.autoTable({
+                startY: 62,
+                head: [[t('pdf_col_date'), t('pdf_col_inv'), t('pdf_col_desc'), t('pdf_col_qty'), t('pdf_col_unit'), t('pdf_col_total')]],
+                body: bodyData,
+                theme: 'striped',
+                headStyles: { fillColor: [30, 58, 138] },
+                styles: { fontSize: 8 },
+                columnStyles: { 2: { cellWidth: 70 } } 
+            });
+
+            // --- 2. RESUMEN POR VARIEDAD (KG) ---
+            let finalY = doc.lastAutoTable.finalY + 15;
+            
+            doc.setFontSize(11);
+            doc.setTextColor(30, 58, 138);
+            doc.text(t('pdf_sec_varieties'), 14, finalY);
+
+            // Agrupar por variedad
+            const varietyMap = {};
+            transactions.forEach(t => {
+                if (!varietyMap[t.variedad]) varietyMap[t.variedad] = 0;
+                varietyMap[t.variedad] += (t.peso || 0);
+            });
+            const varietyData = Object.entries(varietyMap)
+                .filter(([_, weight]) => weight > 0)
+                .map(([name, weight]) => [name, formatWeight(weight)]);
+
+            doc.autoTable({
+                startY: finalY + 4,
+                head: [[t('pdf_col_var'), t('pdf_col_kg')]],
+                body: varietyData,
+                theme: 'grid',
+                headStyles: { fillColor: [71, 85, 105] }, // Slate-600
+                styles: { fontSize: 9 },
+                tableWidth: 100
+            });
+
+            // --- 3. ANÁLISIS ---
+            // Calcular crecimiento general
+            const vals = getClientValues(client);
+            const base = state.metricMode === 'weight' ? vals.weight25 : vals.money25;
+            const curr = state.metricMode === 'weight' ? vals.weight26 : vals.money26;
+            
+            let growthText = "-";
+            let color = [0, 0, 0];
+            if (base > 0) {
+                const pct = ((curr - base) / base) * 100;
+                growthText = formatPercent(pct);
+                if (pct < 0) color = [220, 38, 38]; 
+                else color = [22, 163, 74]; 
+            }
+
+            finalY = doc.lastAutoTable.finalY + 15;
+            doc.setFontSize(11);
+            doc.setTextColor(30, 58, 138);
+            doc.text(t('pdf_sec_analysis'), 14, finalY);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(0);
+            doc.text(`${t('pdf_growth_gen')} `, 14, finalY + 7);
+            doc.setTextColor(color[0], color[1], color[2]);
+            doc.setFont(undefined, 'bold');
+            doc.text(growthText, 60, finalY + 7);
+            doc.setFont(undefined, 'normal');
+
+            // Encontrar productos con caída > 10%
+            const alertProducts = client.productos.filter(p => {
+                const p25Raw = getProductData(p, 2025);
+                const pBase = state.viewMode === 'bimester' 
+                    ? (state.metricMode==='weight' ? p25Raw.w_total : p25Raw.m_total)
+                    : (state.metricMode==='weight' ? p25Raw.w_feb : p25Raw.m_feb);
+                
+                const pCurr = state.viewMode === 'bimester'
+                    ? (state.metricMode==='weight' ? (p.w26_total || (p.w26_ene+p.w26_feb)) : (p.v26_total || (p.v26_ene+p.v26_feb)))
+                    : (state.metricMode==='weight' ? p.w26_feb : p.v26_feb);
+
+                if (pBase > 0) {
+                    const drop = ((pCurr - pBase) / pBase) * 100;
+                    return drop < -10;
+                }
+                return false;
+            });
+
+            if (alertProducts.length > 0) {
+                doc.setTextColor(220, 38, 38);
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.text(t('pdf_alert_title'), 14, finalY + 15);
+                
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(50);
+                doc.text(t('pdf_alert_msg'), 14, finalY + 20);
+
+                let yPos = finalY + 26;
+                alertProducts.forEach(p => {
+                    doc.text(`• ${p.nombre}`, 18, yPos);
+                    yPos += 5;
+                });
+            }
+
+            doc.save(`${client.nombre}_Reporte.pdf`);
+        };
 
         window.changeView = (mode) => {
             state.viewMode = mode;
             const btnFeb = document.getElementById('tab-february');
             const btnBim = document.getElementById('tab-bimester');
-            if (mode === 'february') {
-                btnFeb.className = "flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active touch-manipulation";
-                btnBim.className = "flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive touch-manipulation";
-            } else {
-                btnFeb.className = "flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive touch-manipulation";
-                btnBim.className = "flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active touch-manipulation";
-            }
-            document.querySelectorAll('.header-year-2025').forEach(el => el.textContent = mode === 'bimester' ? t('col_total_2025') : t('col_feb_2025'));
-            document.querySelectorAll('.header-year-2026').forEach(el => el.textContent = mode === 'bimester' ? t('col_total_2026') : t('col_feb_2026'));
-            updateUI();
-            if (state.selectedId) {
-                const client = state.allData.find(c => c.id === state.selectedId);
-                if (client) renderDetail(client);
-            }
+            const activeClass = "flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active touch-manipulation";
+            const inactiveClass = "flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive touch-manipulation";
+            if (mode === 'february') { btnFeb.className = activeClass; btnBim.className = inactiveClass; } 
+            else { btnFeb.className = inactiveClass; btnBim.className = activeClass; }
+            updateHeaders(); updateUI();
+            if (state.selectedId) { const client = state.allData.find(c => c.id === state.selectedId); if (client) renderDetail(client); }
         };
+
+        window.changeMetric = (metric) => {
+            state.metricMode = metric;
+            document.getElementById('metric-weight').classList.toggle('active', metric === 'weight');
+            document.getElementById('metric-money').classList.toggle('active', metric === 'money');
+            updateHeaders(); updateUI();
+            if (state.selectedId) { const client = state.allData.find(c => c.id === state.selectedId); if (client) renderDetail(client); }
+        };
+
+        window.toggleHideSmall = (isChecked) => { state.hideSmall = isChecked; updateUI(); };
+
+        function updateHeaders() {
+            const header25 = document.querySelector('.header-year-2025');
+            const header26 = document.querySelector('.header-year-2026');
+            if(header25 && header26) {
+                header25.textContent = state.viewMode === 'bimester' ? t('col_total_2025') : t('col_feb_2025');
+                header26.textContent = state.viewMode === 'bimester' ? t('col_total_2026') : t('col_feb_2026');
+            }
+            const detailH25 = document.getElementById('header-2025');
+            const detailH26 = document.getElementById('header-2026');
+            if(detailH25 && detailH26) {
+                const keyPrefix = state.metricMode === 'weight' ? 'header_cons_' : 'header_fact_';
+                detailH25.textContent = t(keyPrefix + '2025');
+                detailH26.textContent = t(keyPrefix + '2026');
+            }
+        }
 
         function getClientValues(client) {
             if (state.viewMode === 'bimester') {
-                return { v25: client.ventas2025, v26: client.ventas2026 };
+                return { money25: client.ventas2025, money26: client.ventas2026, weight25: client.peso2025, weight26: client.peso2026 };
             } else {
-                const v25 = client.productos.reduce((sum, p) => sum + (p.v25_feb || 0), 0);
-                const v26 = client.productos.reduce((sum, p) => sum + (p.v26_feb || 0), 0);
-                return { v25, v26 };
+                let m25=0, m26=0, w25=0, w26=0;
+                client.productos.forEach(p => {
+                    m25 += (p.v25_feb || 0); m26 += (p.v26_feb || 0); w25 += (p.w25_feb || 0); w26 += (p.w26_feb || 0);
+                });
+                return { money25: m25, money26: m26, weight25: w25, weight26: w26 };
             }
         }
 
         function updateUI() {
-            const processed = state.allData
+            let processed = state.allData
                 .filter(c => c.nombre.toLowerCase().includes(state.searchTerm.toLowerCase()))
                 .map(c => {
                     const vals = getClientValues(c);
-                    let growth = 0;
-                    let isNew = false;
-
-                    if (vals.v25 > 0) {
-                        growth = ((vals.v26 - vals.v25) / vals.v25) * 100;
-                    } else if (vals.v26 > 0) {
-                        growth = 100;
-                        isNew = true;
-                    } else if (vals.v25 > 0 && vals.v26 === 0) {
-                        growth = -100;
-                    }
-
-                    return { ...c, vals, growth, isNew };
+                    const primary25 = state.metricMode === 'weight' ? vals.weight25 : vals.money25;
+                    const primary26 = state.metricMode === 'weight' ? vals.weight26 : vals.money26;
+                    let growth = 0; let isNew = false;
+                    if (primary25 > 0) { growth = ((primary26 - primary25) / primary25) * 100; } 
+                    else if (primary26 > 0) { growth = 100; isNew = true; } 
+                    else if (primary25 > 0 && primary26 === 0) { growth = -100; }
+                    return { ...c, vals, growth, isNew, primary26 }; 
                 });
 
-            const newClients = processed.filter(c => c.isNew).sort((a,b) => b.vals.v26 - a.vals.v26);
+            if (state.hideSmall) {
+                processed = processed.filter(item => (item.vals.weight25 + item.vals.weight26) > 20);
+            }
+
+            const newClients = processed.filter(c => c.isNew).sort((a,b) => b.primary26 - a.primary26);
             const highGrowth = processed.filter(c => !c.isNew && c.growth > 10).sort((a,b) => a.nombre.localeCompare(b.nombre));
             const stableGrowth = processed.filter(c => !c.isNew && c.growth >= 0 && c.growth <= 10).sort((a,b) => a.nombre.localeCompare(b.nombre));
             const negativeGrowth = processed.filter(c => !c.isNew && c.growth < 0).sort((a,b) => a.growth - b.growth);
 
             const container = document.getElementById('clients-list');
-            Array.from(container.children).forEach(child => {
-                if (child.id !== 'list-loader') container.removeChild(child);
-            });
+            Array.from(container.children).forEach(child => { if (child.id !== 'list-loader') container.removeChild(child); });
 
             renderGroup(container, newClients, t('group_new'), "text-purple-700 bg-purple-50 border-purple-100");
             renderGroup(container, highGrowth, t('group_high'), "text-green-700 bg-green-50 border-green-100");
             renderGroup(container, stableGrowth, t('group_stable'), "text-blue-700 bg-blue-50 border-blue-100");
             renderGroup(container, negativeGrowth, t('group_neg'), "text-red-700 bg-red-50 border-red-100");
-
             document.getElementById('list-footer').textContent = `${processed.length} ${t('footer_listed')}`;
         }
 
@@ -423,30 +669,30 @@
             items.forEach(item => {
                 const el = document.createElement('div');
                 const isSelected = item.id === state.selectedId;
-                let baseClass = "grid grid-cols-12 px-4 py-4 md:py-3 border-b border-slate-50 cursor-pointer transition-all duration-200 items-start relative group ";
+                let baseClass = "grid grid-cols-12 px-4 py-3 border-b border-slate-50 cursor-pointer transition-all duration-200 items-center relative group ";
                 if (isSelected) baseClass += "bg-blue-50/60 "; else baseClass += "hover:bg-slate-50 ";
                 el.className = baseClass;
                 el.onclick = () => { selectClient(item); };
                 let badge = '';
+                const primary25 = state.metricMode === 'weight' ? item.vals.weight25 : item.vals.money25;
+                const primary26 = state.metricMode === 'weight' ? item.vals.weight26 : item.vals.money26;
                 if (item.isNew) {
                     badge = `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] mt-1 font-bold bg-purple-100 text-purple-700 border border-purple-200">✨ ${t('badge_new')}</span>`;
-                } else if (item.vals.v25 > 0 || item.vals.v26 > 0) {
+                } else if (primary25 > 0 || primary26 > 0) {
                     const color = item.growth >= 0 ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200';
                     const icon = item.growth >= 0 ? '▲' : '▼';
                     badge = `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] mt-1 font-medium border ${color}">${icon} ${Math.abs(item.growth).toFixed(1)}%</span>`;
                 }
                 const activeBorder = isSelected ? '<div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r"></div>' : '';
-                el.innerHTML = `${activeBorder}<div class="col-span-6 pr-2 pl-2"><p class="text-xs font-bold text-wrap ${isSelected ? 'text-blue-700' : 'text-slate-700'}">${item.nombre}</p>${badge}</div><div class="col-span-3 text-right text-[10px] sm:text-xs text-slate-500 font-medium font-mono truncate pt-0.5">${formatCurrency(item.vals.v25)}</div><div class="col-span-3 text-right text-[10px] sm:text-xs font-bold font-mono truncate pt-0.5 ${item.vals.v26 >= item.vals.v25 ? 'text-slate-800' : 'text-red-600'}">${formatCurrency(item.vals.v26)}</div>`;
+                el.innerHTML = `${activeBorder}<div class="col-span-6 pr-2 pl-2"><p class="text-xs font-bold text-wrap ${isSelected ? 'text-blue-700' : 'text-slate-700'}">${item.nombre}</p>${badge}</div><div class="col-span-3">${getDualValueHTML(item.vals.money25, item.vals.weight25)}</div><div class="col-span-3">${getDualValueHTML(item.vals.money26, item.vals.weight26)}</div>`;
                 container.appendChild(el);
             });
         }
 
         function selectClient(item) {
             state.selectedId = item.id;
-            updateUI(); // Refrescar lista para selección visual
+            updateUI(); 
             renderDetail(item);
-            
-            // MOSTRAR DETALLE EN MÓVIL
             if (window.innerWidth < 768) {
                 document.getElementById('left-panel').classList.add('hidden');
                 document.getElementById('detail-panel').classList.remove('hidden', 'md:flex');
@@ -455,11 +701,9 @@
         }
 
         window.backToMobileList = () => {
-            // OCULTAR DETALLE Y MOSTRAR LISTA
             document.getElementById('left-panel').classList.remove('hidden');
             document.getElementById('detail-panel').classList.add('hidden');
             document.getElementById('detail-panel').classList.remove('flex');
-            // Limpiar selección para feedback visual
             state.selectedId = null;
             updateUI();
         }
@@ -469,14 +713,12 @@
             document.getElementById('detail-content').classList.remove('hidden');
             const vals = getClientValues(client);
             document.getElementById('detail-title').textContent = client.nombre;
-            const subText = state.viewMode === 'bimester' ? t('detail_subtitle_bim') : t('detail_subtitle_feb');
-            document.getElementById('detail-subtitle').textContent = subText;
-            document.getElementById('total-2025').textContent = `Total: ${formatCurrency(vals.v25)}`;
-            document.getElementById('total-2026').textContent = `Total: ${formatCurrency(vals.v26)}`;
-            
-            // En móvil, podemos ocultar columnas de Ene/Feb si falta espacio, pero en desktop las mostramos
-            // Usamos clases CSS 'hidden md:table-cell' en HTML
-            
+            document.getElementById('detail-subtitle').textContent = state.viewMode === 'bimester' ? t('detail_subtitle_bim') : t('detail_subtitle_feb');
+            document.getElementById('total-2025').innerHTML = getDualValueHTML(vals.money25, vals.weight25);
+            document.getElementById('total-2026').innerHTML = getDualValueHTML(vals.money26, vals.weight26);
+            const displayEne = state.viewMode === 'bimester' ? 'table-cell' : 'none';
+            document.querySelectorAll('.col-ene').forEach(el => el.style.display = displayEne);
+            updateHeaders();
             renderDetailTable('tbody-2025', client.productos, 2025);
             renderDetailTable('tbody-2026', client.productos, 2026);
         }
@@ -485,12 +727,14 @@
             const tbody = document.getElementById(tbodyId);
             tbody.innerHTML = '';
             const items = products.map(p => {
-                const prefix = year === 2026 ? 'v26' : 'v25';
-                const ene = p[`${prefix}_ene`] || 0;
-                const feb = p[`${prefix}_feb`] || 0;
-                const total = state.viewMode === 'bimester' ? (p[`${prefix}_total`] || (ene+feb)) : feb;
-                return { ...p, ene, feb, total };
-            }).filter(p => p.total > 0).sort((a,b) => b.total - a.total);
+                const prefix = year === 2026 ? '26' : '25';
+                const m_ene = p[`v${prefix}_ene`] || 0; const m_feb = p[`v${prefix}_feb`] || 0;
+                const w_ene = p[`w${prefix}_ene`] || 0; const w_feb = p[`w${prefix}_feb`] || 0;
+                const m_total = state.viewMode === 'bimester' ? (p[`v${prefix}_total`] || (m_ene+m_feb)) : m_feb;
+                const w_total = state.viewMode === 'bimester' ? (p[`w${prefix}_total`] || (w_ene+w_feb)) : w_feb;
+                const primary = state.metricMode === 'weight' ? w_total : m_total;
+                return { ...p, m_ene, m_feb, w_ene, w_feb, m_total, w_total, primary };
+            }).filter(p => p.primary > 0).sort((a,b) => b.primary - a.primary);
 
             if (items.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-slate-400 italic">${t('no_records_year')} ${year}</td></tr>`;
@@ -502,49 +746,48 @@
                 tr.className = "hover:bg-slate-50 group border-b border-slate-50 last:border-0";
                 let growthCell = '';
                 if (year === 2026) {
-                    const p25 = getProductData(p, 2025);
-                    const base25 = state.viewMode === 'bimester' ? p25.total : p25.feb;
+                    const p25Raw = getProductData(p, 2025); 
+                    const m25 = state.viewMode === 'bimester' ? p25Raw.m_total : p25Raw.m_feb;
+                    const w25 = state.viewMode === 'bimester' ? p25Raw.w_total : p25Raw.w_feb;
+                    const base = state.metricMode === 'weight' ? w25 : m25;
+                    const current = state.metricMode === 'weight' ? p.w_total : p.m_total;
                     let badge = '<span class="text-slate-300 text-xs">-</span>';
-                    if (base25 > 0) {
-                        const pct = ((p.total - base25) / base25) * 100;
+                    if (base > 0) {
+                        const pct = ((current - base) / base) * 100;
                         const color = pct >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
                         const icon = pct >= 0 ? '▲' : '▼';
                         badge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs ${color} font-bold">${icon} ${Math.abs(pct).toFixed(1)}%</span>`;
-                    } else if (p.total > 0) {
+                    } else if (current > 0) {
                         badge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-700 font-bold">${t('badge_new')}</span>`;
                     }
                     growthCell = `<td class="px-4 md:px-6 py-3 text-right">${badge}</td>`;
-                } else {
-                    growthCell = `<td class="px-4 md:px-6 py-3"></td>`;
-                }
-                tr.innerHTML = `<td class="px-4 md:px-6 py-3 font-medium text-slate-700 break-words w-5/12 text-xs sm:text-sm">${p.nombre}</td><td class="px-4 md:px-6 py-3 text-right font-mono text-slate-500 text-xs hidden md:table-cell">${formatCurrency(p.ene)}</td><td class="px-4 md:px-6 py-3 text-right font-mono text-slate-500 text-xs hidden md:table-cell">${formatCurrency(p.feb)}</td><td class="px-4 md:px-6 py-3 text-right font-mono font-bold text-slate-800 bg-slate-50/50 text-xs sm:text-sm">${formatCurrency(p.total)}</td>${growthCell}`;
+                } else { growthCell = `<td class="px-4 md:px-6 py-3"></td>`; }
+                const displayEne = state.viewMode === 'bimester' ? '' : 'display:none;';
+                tr.innerHTML = `<td class="px-4 md:px-6 py-3 font-medium text-slate-700 break-words w-5/12 text-xs sm:text-sm">${p.nombre}</td><td class="px-4 md:px-6 py-3" style="${displayEne}">${getDualValueHTML(p.m_ene, p.w_ene)}</td><td class="px-4 md:px-6 py-3">${getDualValueHTML(p.m_feb, p.w_feb)}</td><td class="px-4 md:px-6 py-3 bg-slate-50/50">${getDualValueHTML(p.m_total, p.w_total)}</td>${growthCell}`;
                 tbody.appendChild(tr);
             });
         }
 
         function getProductData(rawProd, year) {
-            const y = year === 2026 ? 'v26' : 'v25';
-            return { ene: rawProd[`${y}_ene`] || 0, feb: rawProd[`${y}_feb`] || 0, total: rawProd[`${y}_total`] || 0 };
+            const prefix = '25';
+            const m_ene = rawProd[`v${prefix}_ene`] || 0; const m_feb = rawProd[`v${prefix}_feb`] || 0; const m_total = rawProd[`v${prefix}_total`] || 0;
+            const w_ene = rawProd[`w${prefix}_ene`] || 0; const w_feb = rawProd[`w${prefix}_feb`] || 0; const w_total = rawProd[`w${prefix}_total`] || 0;
+            return { m_ene, m_feb, m_total, w_ene, w_feb, w_total };
         }
 
-        // --- LÓGICA DE MODAL DE FACTURAS ---
         window.openInvoiceModal = (year) => {
             const client = state.allData.find(c => c.id === state.selectedId);
             if (!client || !client.facturas) return;
-
             const modal = document.getElementById('invoice-modal');
             const tbody = document.getElementById('modal-tbody');
             tbody.innerHTML = '';
-
             const filteredInvoices = client.facturas.filter(f => {
                 if (f.anio !== year) return false;
                 if (state.viewMode === 'february' && f.mes !== 1) return false;
                 return true;
             });
-
             document.getElementById('modal-title').textContent = `${t('modal_title_prefix')} ${year}`;
             document.getElementById('modal-subtitle').textContent = state.viewMode === 'bimester' ? t('tab_bimester') : t('tab_feb');
-
             if (filteredInvoices.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="2" class="px-6 py-8 text-center text-slate-400 italic">${t('no_records')}</td></tr>`;
                 document.getElementById('modal-total').textContent = formatCurrency(0);
@@ -555,31 +798,18 @@
                     total += f.monto;
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-slate-50 border-b border-slate-50";
-                    tr.innerHTML = `
-                        <td class="px-6 py-3 font-mono text-xs text-blue-600 font-bold">${f.numero}</td>
-                        <td class="px-6 py-3 text-right font-mono text-slate-700">${formatCurrency(f.monto)}</td>
-                    `;
+                    tr.innerHTML = `<td class="px-6 py-3 font-mono text-xs text-blue-600 font-bold">${f.numero}</td><td class="px-6 py-3 text-right font-mono text-slate-700">${formatCurrency(f.monto)}</td>`;
                     tbody.appendChild(tr);
                 });
                 document.getElementById('modal-total').textContent = formatCurrency(total);
                 document.getElementById('modal-count').textContent = `${filteredInvoices.length} facturas`;
             }
-
             modal.classList.remove('hidden');
         };
 
-        window.closeModal = () => {
-            document.getElementById('invoice-modal').classList.add('hidden');
-        };
-
-        document.getElementById('invoice-modal').addEventListener('click', (e) => {
-            if (e.target.id === 'invoice-modal') closeModal();
-        });
-
-        document.getElementById('search-input').addEventListener('input', (e) => {
-            state.searchTerm = e.target.value;
-            updateUI();
-        });
+        window.closeModal = () => { document.getElementById('invoice-modal').classList.add('hidden'); };
+        document.getElementById('invoice-modal').addEventListener('click', (e) => { if (e.target.id === 'invoice-modal') closeModal(); });
+        document.getElementById('search-input').addEventListener('input', (e) => { state.searchTerm = e.target.value; updateUI(); });
 
         initApp();
     </script>
