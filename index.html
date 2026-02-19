@@ -273,18 +273,23 @@
                 pdf_client: "CLIENTE:",
                 pdf_period: "PERIODO:",
                 pdf_gen_date: "Fecha de generación:",
-                pdf_sec_invoices: "DETALLE DE FACTURAS",
+                pdf_sec_varieties_kg: "RESUMEN POR VARIEDAD (VOLUMEN EN KG)",
+                pdf_sec_varieties_money: "RESUMEN POR VARIEDAD (FACTURACIÓN EN $)",
+                pdf_col_var: "Variedad",
+                pdf_col_kg_25: "KG 2025",
+                pdf_col_kg_26: "KG 2026",
+                pdf_col_money_25: "$ 2025",
+                pdf_col_money_26: "$ 2026",
+                pdf_col_var_pct: "% Var.",
+                pdf_sec_invoices: "REGISTRO DETALLADO DE TRANSACCIONES",
                 pdf_col_date: "Fecha",
                 pdf_col_inv: "Factura",
                 pdf_col_desc: "Descripción",
                 pdf_col_qty: "Cant.",
                 pdf_col_unit: "Precio U.",
                 pdf_col_total: "Total",
-                pdf_sec_varieties: "RESUMEN POR VARIEDAD (KG)",
-                pdf_col_var: "Variedad",
-                pdf_col_kg: "Total KG",
                 pdf_sec_analysis: "ANÁLISIS DE DESEMPEÑO",
-                pdf_growth_gen: "Crecimiento General:",
+                pdf_growth_gen: "Crecimiento General (Métrica Activa):",
                 pdf_alert_title: "⚠️ PRODUCTOS CON CAÍDA CRÍTICA (>10%)",
                 pdf_alert_msg: "Se recomienda revisar el consumo de los siguientes productos:"
             },
@@ -315,8 +320,8 @@
                 col_prod: "Produit",
                 col_jan: "Janvier",
                 col_feb: "Février",
-                col_sum_2025: "Total",
-                col_sum_2026: "Total",
+                col_sum_2025: "Total 2025",
+                col_sum_2026: "Total 2026",
                 col_growth: "% Crois.",
                 group_new: "🌟 Nouveaux Clients",
                 group_high: "Croissance > 10%",
@@ -335,25 +340,31 @@
                 pdf_client: "CLIENT:",
                 pdf_period: "PÉRIODE:",
                 pdf_gen_date: "Date de génération:",
-                pdf_sec_invoices: "DÉTAIL DES FACTURES",
+                pdf_sec_varieties_kg: "RÉSUMÉ PAR VARIÉTÉ (VOLUME EN KG)",
+                pdf_sec_varieties_money: "RÉSUMÉ PAR VARIÉTÉ (FACTURATION EN $)",
+                pdf_col_var: "Variété",
+                pdf_col_kg_25: "KG 2025",
+                pdf_col_kg_26: "KG 2026",
+                pdf_col_money_25: "$ 2025",
+                pdf_col_money_26: "$ 2026",
+                pdf_col_var_pct: "% Var.",
+                pdf_sec_invoices: "REGISTRE DÉTAILLÉ DES TRANSACTIONS",
                 pdf_col_date: "Date",
                 pdf_col_inv: "Facture",
                 pdf_col_desc: "Description",
                 pdf_col_qty: "Qté.",
                 pdf_col_unit: "Prix U.",
                 pdf_col_total: "Total",
-                pdf_sec_varieties: "RÉSUMÉ PAR VARIÉTÉ (KG)",
-                pdf_col_var: "Variété",
-                pdf_col_kg: "Total KG",
                 pdf_sec_analysis: "ANALYSE DE PERFORMANCE",
-                pdf_growth_gen: "Croissance Générale:",
+                pdf_growth_gen: "Croissance Générale (Métrique Active):",
                 pdf_alert_title: "⚠️ PRODUITS EN BAISSE CRITIQUE (>10%)",
                 pdf_alert_msg: "Il est recommandé de vérifier la consommation des produits suivants:"
             }
         };
 
+        // URL DE PRODUCCIÓN VERIFICADA
         const CONFIG = {
-            API_URL: "https://script.google.com/macros/s/AKfycby-LHBHTiAdtRFn9FLY0urdS1XYzVPbTXiUFdYWC_Jm7tD7r06-9MnhtNspbBxnGgeR/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbwETKZtCnq1LT2DLX5yXSfpQvB2A3XyOFwiML4Z_CCrxSvw64B-kKBLnLRy3ukmMHdJ/exec",
             MOCK_DATA: [
                 { id: "m1", nombre: "Cliente Ejemplo 1", ventas2025: 100, ventas2026: 200, peso2025: 50, peso2026: 100, productos: [], facturas: [] }
             ]
@@ -427,12 +438,21 @@
 
         // --- PDF GENERATION LOGIC ---
         window.downloadPDF = () => {
+            if (!window.jspdf) {
+                alert("Error: Librería PDF no cargada. Verifica tu conexión.");
+                return;
+            }
             const { jsPDF } = window.jspdf;
             const client = state.allData.find(c => c.id === state.selectedId);
-            if (!client || !client.transacciones) return;
+            
+            if (!client) return;
+
+            if (!client.transacciones) {
+                alert("⚠️ Faltan datos de transacciones.\n\nPor favor, asegúrate de haber actualizado el Google Apps Script y de haber hecho clic en 'Implementar > Nueva versión'.");
+                return;
+            }
 
             const doc = new jsPDF();
-            const year = 2026; 
             
             // --- HEADER ---
             doc.setFontSize(18);
@@ -451,21 +471,104 @@
             doc.setTextColor(0);
             doc.text(`${t('pdf_client')} ${client.nombre}`, 14, 40);
             const periodText = state.viewMode === 'bimester' ? t('tab_bimester') : t('tab_feb');
-            doc.text(`${t('pdf_period')} ${periodText} ${year}`, 14, 46);
+            doc.text(`${t('pdf_period')} ${periodText} (2025 vs 2026)`, 14, 46);
 
-            // --- 1. TABLA DETALLE FACTURAS ---
-            doc.setFontSize(11);
-            doc.setTextColor(30, 58, 138);
-            doc.text(t('pdf_sec_invoices'), 14, 58);
-
-            // Filtrar transacciones según vista
+            // --- FILTER TRANSACTIONS FOR SELECTED PERIOD (BOTH YEARS) ---
             const transactions = client.transacciones.filter(t => {
-                if (t.anio !== year) return false;
-                if (state.viewMode === 'february' && t.mes !== 1) return false;
+                if (t.anio !== 2025 && t.anio !== 2026) return false;
+                if (state.viewMode === 'february' && t.mes !== 1) return false; // Solo febrero si aplica
                 return true;
             });
 
-            const bodyData = transactions.map(row => [
+            // Agrupar por variedad (Calculando ambos años)
+            const varietyMap = {};
+            transactions.forEach(t => {
+                if (!varietyMap[t.variedad]) {
+                    varietyMap[t.variedad] = { kg25: 0, kg26: 0, money25: 0, money26: 0 };
+                }
+                if (t.anio === 2025) {
+                    varietyMap[t.variedad].kg25 += (t.peso || 0);
+                    varietyMap[t.variedad].money25 += (t.total || 0);
+                } else if (t.anio === 2026) {
+                    varietyMap[t.variedad].kg26 += (t.peso || 0);
+                    varietyMap[t.variedad].money26 += (t.total || 0);
+                }
+            });
+
+            // Función para dar color a la columna de crecimiento
+            const colorizeGrowth = function(data) {
+                if (data.section === 'body' && data.column.index === 3) {
+                    const text = data.cell.raw;
+                    if (text.includes('-')) {
+                        data.cell.styles.textColor = [220, 38, 38]; // Red
+                        data.cell.styles.fontStyle = 'bold';
+                    } else if (text.includes('+') || text.includes('NUEV') || text.includes('NOUVEAU')) {
+                        data.cell.styles.textColor = [22, 163, 74]; // Green
+                        data.cell.styles.fontStyle = 'bold';
+                    }
+                }
+            };
+
+            // --- 1. TABLA RESUMEN KG POR VARIEDAD ---
+            doc.setFontSize(11);
+            doc.setTextColor(30, 58, 138);
+            doc.text(t('pdf_sec_varieties_kg'), 14, 58);
+
+            const kgData = Object.entries(varietyMap).map(([v, d]) => {
+                const pct = d.kg25 > 0 ? ((d.kg26 - d.kg25) / d.kg25) * 100 : (d.kg26 > 0 ? 100 : 0);
+                const pctStr = d.kg25 === 0 && d.kg26 > 0 ? t('badge_new') : formatPercent(pct);
+                return [v, formatWeight(d.kg25), formatWeight(d.kg26), pctStr];
+            }).sort((a, b) => parseFloat(b[2].replace(/[^\d.-]/g, '')) - parseFloat(a[2].replace(/[^\d.-]/g, ''))); // Sort by 2026
+
+            doc.autoTable({
+                startY: 62,
+                head: [[t('pdf_col_var'), t('pdf_col_kg_25'), t('pdf_col_kg_26'), t('pdf_col_var_pct')]],
+                body: kgData,
+                theme: 'striped',
+                headStyles: { fillColor: [71, 85, 105] }, // Slate
+                styles: { fontSize: 9 },
+                didParseCell: colorizeGrowth
+            });
+
+            // --- 2. TABLA RESUMEN $ POR VARIEDAD ---
+            let finalY = doc.lastAutoTable.finalY + 12;
+            doc.setFontSize(11);
+            doc.setTextColor(30, 58, 138);
+            doc.text(t('pdf_sec_varieties_money'), 14, finalY);
+
+            const moneyData = Object.entries(varietyMap).map(([v, d]) => {
+                const pct = d.money25 > 0 ? ((d.money26 - d.money25) / d.money25) * 100 : (d.money26 > 0 ? 100 : 0);
+                const pctStr = d.money25 === 0 && d.money26 > 0 ? t('badge_new') : formatPercent(pct);
+                return [v, formatCurrency(d.money25), formatCurrency(d.money26), pctStr];
+            }).sort((a, b) => parseFloat(b[2].replace(/[^\d.-]/g, '')) - parseFloat(a[2].replace(/[^\d.-]/g, '')));
+
+            doc.autoTable({
+                startY: finalY + 4,
+                head: [[t('pdf_col_var'), t('pdf_col_money_25'), t('pdf_col_money_26'), t('pdf_col_var_pct')]],
+                body: moneyData,
+                theme: 'striped',
+                headStyles: { fillColor: [71, 85, 105] }, 
+                styles: { fontSize: 9 },
+                didParseCell: colorizeGrowth
+            });
+
+            // --- 3. REGISTRO DETALLADO DE TRANSACCIONES (Ambos Años, Cronológico) ---
+            finalY = doc.lastAutoTable.finalY + 15;
+            doc.setFontSize(11);
+            doc.setTextColor(30, 58, 138);
+            doc.text(t('pdf_sec_invoices'), 14, finalY);
+
+            // Ordenar transacciones de más antigua a más reciente
+            transactions.sort((a, b) => {
+                const parseDate = str => {
+                    const parts = str.split('/');
+                    if(parts.length === 3) return new Date(parts[2], parts[1]-1, parts[0]);
+                    return new Date(0);
+                };
+                return parseDate(a.fecha) - parseDate(b.fecha);
+            });
+
+            const transactionData = transactions.map(row => [
                 row.fecha,
                 row.factura,
                 row.producto,
@@ -475,44 +578,24 @@
             ]);
 
             doc.autoTable({
-                startY: 62,
+                startY: finalY + 4,
                 head: [[t('pdf_col_date'), t('pdf_col_inv'), t('pdf_col_desc'), t('pdf_col_qty'), t('pdf_col_unit'), t('pdf_col_total')]],
-                body: bodyData,
-                theme: 'striped',
+                body: transactionData,
+                theme: 'grid',
                 headStyles: { fillColor: [30, 58, 138] },
                 styles: { fontSize: 8 },
                 columnStyles: { 2: { cellWidth: 70 } } 
             });
 
-            // --- 2. RESUMEN POR VARIEDAD (KG) ---
-            let finalY = doc.lastAutoTable.finalY + 15;
+            // --- 4. ANÁLISIS ---
+            finalY = doc.lastAutoTable.finalY + 15;
             
-            doc.setFontSize(11);
-            doc.setTextColor(30, 58, 138);
-            doc.text(t('pdf_sec_varieties'), 14, finalY);
+            // Check if page break is needed for analysis
+            if (finalY > 260) {
+                doc.addPage();
+                finalY = 20;
+            }
 
-            // Agrupar por variedad
-            const varietyMap = {};
-            transactions.forEach(t => {
-                if (!varietyMap[t.variedad]) varietyMap[t.variedad] = 0;
-                varietyMap[t.variedad] += (t.peso || 0);
-            });
-            const varietyData = Object.entries(varietyMap)
-                .filter(([_, weight]) => weight > 0)
-                .map(([name, weight]) => [name, formatWeight(weight)]);
-
-            doc.autoTable({
-                startY: finalY + 4,
-                head: [[t('pdf_col_var'), t('pdf_col_kg')]],
-                body: varietyData,
-                theme: 'grid',
-                headStyles: { fillColor: [71, 85, 105] }, // Slate-600
-                styles: { fontSize: 9 },
-                tableWidth: 100
-            });
-
-            // --- 3. ANÁLISIS ---
-            // Calcular crecimiento general
             const vals = getClientValues(client);
             const base = state.metricMode === 'weight' ? vals.weight25 : vals.money25;
             const curr = state.metricMode === 'weight' ? vals.weight26 : vals.money26;
@@ -526,7 +609,6 @@
                 else color = [22, 163, 74]; 
             }
 
-            finalY = doc.lastAutoTable.finalY + 15;
             doc.setFontSize(11);
             doc.setTextColor(30, 58, 138);
             doc.text(t('pdf_sec_analysis'), 14, finalY);
@@ -536,10 +618,9 @@
             doc.text(`${t('pdf_growth_gen')} `, 14, finalY + 7);
             doc.setTextColor(color[0], color[1], color[2]);
             doc.setFont(undefined, 'bold');
-            doc.text(growthText, 60, finalY + 7);
+            doc.text(growthText, 80, finalY + 7);
             doc.setFont(undefined, 'normal');
 
-            // Encontrar productos con caída > 10%
             const alertProducts = client.productos.filter(p => {
                 const p25Raw = getProductData(p, 2025);
                 const pBase = state.viewMode === 'bimester' 
@@ -569,12 +650,16 @@
 
                 let yPos = finalY + 26;
                 alertProducts.forEach(p => {
+                    if (yPos > 280) { // Page break protection for list
+                        doc.addPage();
+                        yPos = 20;
+                    }
                     doc.text(`• ${p.nombre}`, 18, yPos);
                     yPos += 5;
                 });
             }
 
-            doc.save(`${client.nombre}_Reporte.pdf`);
+            doc.save(`${client.nombre}_Reporte_Comparativo.pdf`);
         };
 
         window.changeView = (mode) => {
