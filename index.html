@@ -166,7 +166,10 @@
                             PDF
                         </button>
                     </div>
-                    <p id="detail-subtitle" class="text-sm text-slate-500 mt-1"></p>
+                    <div class="flex flex-wrap items-center gap-3 mt-2">
+                        <p id="detail-subtitle" class="text-sm text-slate-500"></p>
+                        <div id="detail-diff"></div> <!-- DIFERENCIA ABSOLUTA AQUI -->
+                    </div>
                 </div>
 
                 <!-- Tabla 2026 -->
@@ -284,6 +287,9 @@
                 th_invoice: "# Factura",
                 th_amount: "Monto",
                 back_list: "Volver a la lista",
+                // NUEVAS TRADUCCIONES PARA LA DIFERENCIA
+                diff_gap: "Faltan",
+                diff_surplus: "Superado por",
                 // PDF KEYS
                 pdf_title: "Reporte de Desempeño Comercial",
                 pdf_client: "CLIENTE:",
@@ -306,6 +312,7 @@
                 pdf_col_total: "Total",
                 pdf_sec_analysis: "ANÁLISIS DE DESEMPEÑO",
                 pdf_growth_gen: "Crecimiento General (Métrica Activa):",
+                pdf_diff: "Diferencia vs año ant.",
                 pdf_alert_title: "⚠️ PRODUCTOS CON CAÍDA CRÍTICA (>10%)",
                 pdf_alert_msg: "Se recomienda revisar el consumo de los siguientes productos:"
             },
@@ -359,6 +366,9 @@
                 th_invoice: "# Facture",
                 th_amount: "Montant",
                 back_list: "Retour à la liste",
+                // NUEVAS TRADUCCIONES PARA LA DIFERENCIA
+                diff_gap: "Manque",
+                diff_surplus: "Dépassé de",
                 // PDF KEYS
                 pdf_title: "Rapport de Performance Commerciale",
                 pdf_client: "CLIENT:",
@@ -381,6 +391,7 @@
                 pdf_col_total: "Total",
                 pdf_sec_analysis: "ANALYSE DE PERFORMANCE",
                 pdf_growth_gen: "Croissance Générale (Métrique Active):",
+                pdf_diff: "Différence vs année préc.",
                 pdf_alert_title: "⚠️ PRODUITS EN BAISSE CRITIQUE (>10%)",
                 pdf_alert_msg: "Il est recommandé de vérifier la consommation des produits suivants:"
             }
@@ -613,10 +624,20 @@
             const curr = state.metricMode === 'weight' ? vals.weight26 : vals.money26;
             
             let growthText = "-"; let color = [0, 0, 0];
+            const diff = curr - base;
+            let diffText = "-";
+            let diffColor = [0,0,0];
+
             if (base > 0) {
-                const pct = ((curr - base) / base) * 100;
+                const pct = (diff / base) * 100;
                 growthText = formatPercent(pct);
                 if (pct < 0) color = [220, 38, 38]; else color = [22, 163, 74]; 
+                
+                const formattedDiff = state.metricMode === 'weight' ? formatWeight(Math.abs(diff)) : formatCurrency(Math.abs(diff));
+                const diffLabel = diff >= 0 ? t('diff_surplus') : t('diff_gap');
+                const diffSign = diff >= 0 ? '+' : '-';
+                diffText = `${diffSign}${formattedDiff} (${diffLabel})`;
+                if (diff < 0) diffColor = [220, 38, 38]; else diffColor = [22, 163, 74];
             }
 
             doc.setFontSize(11);
@@ -629,7 +650,17 @@
             doc.setTextColor(color[0], color[1], color[2]);
             doc.setFont(undefined, 'bold');
             doc.text(growthText, 80, finalY + 7);
+            
+            // PDF DIFF LINE
+            doc.setTextColor(0);
             doc.setFont(undefined, 'normal');
+            doc.text(`${t('pdf_diff')} `, 14, finalY + 13);
+            doc.setTextColor(diffColor[0], diffColor[1], diffColor[2]);
+            doc.setFont(undefined, 'bold');
+            doc.text(diffText, 80, finalY + 13);
+            doc.setFont(undefined, 'normal');
+
+            finalY += 6;
 
             const alertProducts = client.productos.filter(p => {
                 const p25Raw = getProductData(p, 2025);
@@ -793,18 +824,31 @@
                 if (isSelected) baseClass += "bg-blue-50/60 "; else baseClass += "hover:bg-slate-50 ";
                 el.className = baseClass;
                 el.onclick = () => { selectClient(item); };
+                
                 let badge = '';
                 const primary25 = state.metricMode === 'weight' ? item.vals.weight25 : item.vals.money25;
                 const primary26 = state.metricMode === 'weight' ? item.vals.weight26 : item.vals.money26;
+                
                 if (item.isNew) {
                     badge = `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] mt-1 font-bold bg-purple-100 text-purple-700 border border-purple-200">✨ ${t('badge_new')}</span>`;
                 } else if (primary25 > 0 || primary26 > 0) {
                     const color = item.growth >= 0 ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200';
                     const icon = item.growth >= 0 ? '▲' : '▼';
-                    badge = `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] mt-1 font-medium border ${color}">${icon} ${Math.abs(item.growth).toFixed(1)}%</span>`;
+                    badge = `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium border ${color}">${icon} ${Math.abs(item.growth).toFixed(1)}%</span>`;
                 }
+
+                // ABSOLUTE DIFFERENCE FOR SIDEBAR
+                let diffStr = '';
+                if (!item.isNew && primary25 > 0) {
+                    const diff = primary26 - primary25;
+                    const diffFormatted = state.metricMode === 'weight' ? formatWeight(Math.abs(diff)) : formatCurrency(Math.abs(diff));
+                    const diffColor = diff >= 0 ? 'text-green-600' : 'text-red-500';
+                    const diffSign = diff >= 0 ? '+' : '-';
+                    diffStr = `<span class="text-[9px] font-bold ${diffColor}">${diffSign}${diffFormatted}</span>`;
+                }
+
                 const activeBorder = isSelected ? '<div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r"></div>' : '';
-                el.innerHTML = `${activeBorder}<div class="col-span-6 pr-2 pl-2"><p class="text-xs font-bold text-wrap ${isSelected ? 'text-blue-700' : 'text-slate-700'}">${item.nombre}</p>${badge}</div><div class="col-span-3">${getDualValueHTML(item.vals.money25, item.vals.weight25)}</div><div class="col-span-3">${getDualValueHTML(item.vals.money26, item.vals.weight26)}</div>`;
+                el.innerHTML = `${activeBorder}<div class="col-span-6 pr-2 pl-2 flex flex-col justify-center"><p class="text-xs font-bold text-wrap ${isSelected ? 'text-blue-700' : 'text-slate-700'}">${item.nombre}</p><div class="flex items-center gap-1 mt-1 flex-wrap">${badge}${diffStr}</div></div><div class="col-span-3">${getDualValueHTML(item.vals.money25, item.vals.weight25)}</div><div class="col-span-3">${getDualValueHTML(item.vals.money26, item.vals.weight26)}</div>`;
                 container.appendChild(el);
             });
         }
@@ -838,7 +882,22 @@
             if (state.viewMode === 'january') subT = t('detail_subtitle_jan');
             if (state.viewMode === 'february') subT = t('detail_subtitle_feb');
             if (state.viewMode === 'march') subT = t('detail_subtitle_mar');
-            document.getElementById('detail-subtitle').textContent = subText = subT;
+            document.getElementById('detail-subtitle').textContent = subT;
+
+            // ABSOLUTE DIFFERENCE FOR DETAIL VIEW
+            const primary25 = state.metricMode === 'weight' ? vals.weight25 : vals.money25;
+            const primary26 = state.metricMode === 'weight' ? vals.weight26 : vals.money26;
+            const diff = primary26 - primary25;
+
+            let diffHtml = '';
+            if (primary25 > 0) {
+                const formattedDiff = state.metricMode === 'weight' ? formatWeight(Math.abs(diff)) : formatCurrency(Math.abs(diff));
+                const diffColor = diff >= 0 ? 'text-green-700 bg-green-100 border-green-200' : 'text-red-700 bg-red-100 border-red-200';
+                const diffLabel = diff >= 0 ? t('diff_surplus') : t('diff_gap');
+                const diffIcon = diff >= 0 ? '▲' : '▼';
+                diffHtml = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border ${diffColor}">${diffIcon} ${diffLabel} ${formattedDiff}</span>`;
+            }
+            document.getElementById('detail-diff').innerHTML = diffHtml;
 
             document.getElementById('total-2025').innerHTML = getDualValueHTML(vals.money25, vals.weight25);
             document.getElementById('total-2026').innerHTML = getDualValueHTML(vals.money26, vals.weight26);
