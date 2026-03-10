@@ -101,12 +101,19 @@
                     </button>
                 </div>
                 
-                <div class="flex gap-2 mb-3">
-                    <button onclick="changeView('february')" id="tab-february" class="flex-1 py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active touch-manipulation">
-                        <span data-i18n="tab_feb">Solo Febrero</span><br/><span class="font-normal opacity-80 text-[10px] md:text-[9px]" data-i18n="tab_feb_sub">(Comparativo Mes)</span>
+                <!-- PESTAÑAS VISTA: TRIMESTRE + MESES -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
+                    <button onclick="changeView('trimester')" id="tab-trimester" class="py-2 px-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active touch-manipulation">
+                        <span data-i18n="tab_trimester">1er Trimestre</span><br/><span class="font-normal opacity-80 text-[9px]" data-i18n="tab_trimester_sub">(Ene-Mar)</span>
                     </button>
-                    <button onclick="changeView('bimester')" id="tab-bimester" class="flex-1 py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive touch-manipulation">
-                        <span data-i18n="tab_bimester">1er Bimestre</span><br/><span class="font-normal opacity-80 text-[10px] md:text-[9px]" data-i18n="tab_bimester_sub">(Ene + Feb)</span>
+                    <button onclick="changeView('january')" id="tab-january" class="py-2 px-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive touch-manipulation flex flex-col items-center justify-center">
+                        <span data-i18n="tab_jan">Enero</span>
+                    </button>
+                    <button onclick="changeView('february')" id="tab-february" class="py-2 px-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive touch-manipulation flex flex-col items-center justify-center">
+                        <span data-i18n="tab_feb">Febrero</span>
+                    </button>
+                    <button onclick="changeView('march')" id="tab-march" class="py-2 px-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive touch-manipulation flex flex-col items-center justify-center">
+                        <span data-i18n="tab_mar">Marzo</span>
                     </button>
                 </div>
 
@@ -178,10 +185,11 @@
                         <table class="w-full text-left text-sm relative">
                             <thead class="bg-white text-xs uppercase text-slate-500 border-b border-blue-50 sticky top-0 z-10 shadow-sm">
                                 <tr>
-                                    <th class="px-4 md:px-6 py-3 w-5/12 bg-white" data-i18n="col_prod">Producto</th>
-                                    <th class="px-4 md:px-6 py-3 text-right bg-white col-ene hidden md:table-cell" data-i18n="col_jan">Enero</th>
-                                    <th class="px-4 md:px-6 py-3 text-right bg-white col-feb hidden md:table-cell" data-i18n="col_feb">Febrero</th>
-                                    <th class="px-4 md:px-6 py-3 text-right bg-blue-50/50 font-bold text-blue-800" data-i18n="col_sum_2026">Total 2026</th>
+                                    <th class="px-4 md:px-6 py-3 w-4/12 bg-white" data-i18n="col_prod">Producto</th>
+                                    <th class="px-2 md:px-4 py-3 text-right bg-white col-ene hidden md:table-cell" data-i18n="col_jan">Enero</th>
+                                    <th class="px-2 md:px-4 py-3 text-right bg-white col-feb hidden md:table-cell" data-i18n="col_feb">Febrero</th>
+                                    <th class="px-2 md:px-4 py-3 text-right bg-white col-mar hidden md:table-cell" data-i18n="col_mar">Marzo</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-blue-50/50 font-bold text-blue-800 col-total" data-i18n="col_sum_2026">Total 2026</th>
                                     <th class="px-4 md:px-6 py-3 text-right bg-white font-bold w-16 md:w-24" data-i18n="col_growth">% Crec.</th>
                                 </tr>
                             </thead>
@@ -206,10 +214,11 @@
                         <table class="w-full text-left text-sm relative">
                             <thead class="bg-white text-xs uppercase text-slate-500 border-b border-slate-100 sticky top-0 z-10 shadow-sm">
                                 <tr>
-                                    <th class="px-4 md:px-6 py-3 w-5/12 bg-white" data-i18n="col_prod">Producto</th>
-                                    <th class="px-4 md:px-6 py-3 text-right bg-white col-ene hidden md:table-cell" data-i18n="col_jan">Enero</th>
-                                    <th class="px-4 md:px-6 py-3 text-right bg-white col-feb hidden md:table-cell" data-i18n="col_feb">Febrero</th>
-                                    <th class="px-4 md:px-6 py-3 text-right bg-slate-50 font-bold" data-i18n="col_sum_2025">Total 2025</th>
+                                    <th class="px-4 md:px-6 py-3 w-4/12 bg-white" data-i18n="col_prod">Producto</th>
+                                    <th class="px-2 md:px-4 py-3 text-right bg-white col-ene hidden md:table-cell" data-i18n="col_jan">Enero</th>
+                                    <th class="px-2 md:px-4 py-3 text-right bg-white col-feb hidden md:table-cell" data-i18n="col_feb">Febrero</th>
+                                    <th class="px-2 md:px-4 py-3 text-right bg-white col-mar hidden md:table-cell" data-i18n="col_mar">Marzo</th>
+                                    <th class="px-4 md:px-6 py-3 text-right bg-slate-50 font-bold col-total" data-i18n="col_sum_2025">Total 2025</th>
                                     <th class="px-4 md:px-6 py-3 text-right bg-white w-16 md:w-24"></th>
                                 </tr>
                             </thead>
@@ -224,14 +233,14 @@
 
     <!-- LÓGICA DE NEGOCIO -->
     <script>
-        // --- DICCIONARIO ---
         const translations = {
             es: {
                 dashboard_title: "Dashboard Comercial",
-                tab_bimester: "1er Bimestre",
-                tab_bimester_sub: "(Ene + Feb)",
-                tab_feb: "Solo Febrero",
-                tab_feb_sub: "(Comparativo Mes)",
+                tab_trimester: "1er Trimestre",
+                tab_trimester_sub: "(Ene-Mar)",
+                tab_jan: "Enero",
+                tab_feb: "Febrero",
+                tab_mar: "Marzo",
                 metric_kg: "Consumo (KG)",
                 metric_money: "Facturación ($)",
                 search_placeholder: "Buscar cliente...",
@@ -239,13 +248,19 @@
                 col_client: "Cliente",
                 col_total_2025: "Total 2025",
                 col_total_2026: "Total 2026",
+                col_jan_2025: "Ene 2025",
+                col_jan_2026: "Ene 2026",
                 col_feb_2025: "Feb 2025",
                 col_feb_2026: "Feb 2026",
+                col_mar_2025: "Mar 2025",
+                col_mar_2026: "Mar 2026",
                 loading: "Cargando datos...",
                 footer_listed: "Clientes listados",
                 empty_state: "Selecciona un cliente para ver su desglose",
-                detail_subtitle_bim: "Comparativo Primer Bimestre (Ene + Feb)",
+                detail_subtitle_tri: "Comparativo 1er Trimestre (Ene - Mar)",
+                detail_subtitle_jan: "Comparativo Mensual (Enero)",
                 detail_subtitle_feb: "Comparativo Mensual (Febrero)",
+                detail_subtitle_mar: "Comparativo Mensual (Marzo)",
                 header_cons_2025: "Consumo 2025",
                 header_cons_2026: "Consumo 2026",
                 header_fact_2025: "Facturación 2025",
@@ -253,8 +268,9 @@
                 col_prod: "Producto",
                 col_jan: "Enero",
                 col_feb: "Febrero",
-                col_sum_2025: "Total 2025",
-                col_sum_2026: "Total 2026",
+                col_mar: "Marzo",
+                col_sum_2025: "Total",
+                col_sum_2026: "Total",
                 col_growth: "% Crec.",
                 group_new: "🌟 Clientes Nuevos",
                 group_high: "Crecimiento > 10%",
@@ -295,10 +311,11 @@
             },
             fr: {
                 dashboard_title: "Tableau de Bord Commercial",
-                tab_bimester: "1er Bimestre",
-                tab_bimester_sub: "(Jan + Fév)",
-                tab_feb: "Février Uniq.",
-                tab_feb_sub: "(Comparatif Mois)",
+                tab_trimester: "1er Trimestre",
+                tab_trimester_sub: "(Jan-Mar)",
+                tab_jan: "Janvier",
+                tab_feb: "Février",
+                tab_mar: "Mars",
                 metric_kg: "Conso. (KG)",
                 metric_money: "Facturation ($)",
                 search_placeholder: "Rechercher client...",
@@ -306,13 +323,19 @@
                 col_client: "Client",
                 col_total_2025: "Total 2025",
                 col_total_2026: "Total 2026",
+                col_jan_2025: "Jan 2025",
+                col_jan_2026: "Jan 2026",
                 col_feb_2025: "Fév 2025",
                 col_feb_2026: "Fév 2026",
+                col_mar_2025: "Mar 2025",
+                col_mar_2026: "Mar 2026",
                 loading: "Chargement des données...",
                 footer_listed: "Clients listés",
                 empty_state: "Sélectionnez un client pour voir les détails",
-                detail_subtitle_bim: "Comparatif 1er Bimestre (Jan + Fév)",
+                detail_subtitle_tri: "Comparatif 1er Trimestre (Jan - Mar)",
+                detail_subtitle_jan: "Comparatif Mensuel (Janvier)",
                 detail_subtitle_feb: "Comparatif Mensuel (Février)",
+                detail_subtitle_mar: "Comparatif Mensuel (Mars)",
                 header_cons_2025: "Consommation 2025",
                 header_cons_2026: "Consommation 2026",
                 header_fact_2025: "Facturation 2025",
@@ -320,8 +343,9 @@
                 col_prod: "Produit",
                 col_jan: "Janvier",
                 col_feb: "Février",
-                col_sum_2025: "Total 2025",
-                col_sum_2026: "Total 2026",
+                col_mar: "Mars",
+                col_sum_2025: "Total",
+                col_sum_2026: "Total",
                 col_growth: "% Crois.",
                 group_new: "🌟 Nouveaux Clients",
                 group_high: "Croissance > 10%",
@@ -362,19 +386,16 @@
             }
         };
 
-        // URL DE PRODUCCIÓN VERIFICADA
         const CONFIG = {
-            API_URL: "https://script.google.com/macros/s/AKfycbwETKZtCnq1LT2DLX5yXSfpQvB2A3XyOFwiML4Z_CCrxSvw64B-kKBLnLRy3ukmMHdJ/exec",
-            MOCK_DATA: [
-                { id: "m1", nombre: "Cliente Ejemplo 1", ventas2025: 100, ventas2026: 200, peso2025: 50, peso2026: 100, productos: [], facturas: [] }
-            ]
+            API_URL: "https://script.google.com/macros/s/AKfycbwE1qm7Tk-hdcNTQmKtJx3IhfpNx_p5gQxKDNTLWu9rHaODFfF9dw4W09fcIP24phhO/exec",
+            MOCK_DATA: []
         };
 
         let state = { 
             allData: [], 
             selectedId: null, 
             searchTerm: "", 
-            viewMode: 'february', 
+            viewMode: 'trimester', 
             metricMode: 'weight',
             isDemo: false, 
             lang: 'es',
@@ -389,7 +410,7 @@
             document.getElementById('lang-fr').classList.toggle('active', lang === 'fr');
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                el.textContent = t(key);
+                if (key) el.innerHTML = t(key);
             });
             document.getElementById('search-input').placeholder = t('search_placeholder');
             updateUI();
@@ -423,10 +444,9 @@
                 state.isDemo = false;
             } catch (err) {
                 console.warn(err);
-                state.allData = CONFIG.MOCK_DATA;
                 state.isDemo = true;
                 document.getElementById('status-bar').classList.remove('hidden');
-                document.getElementById('status-text').textContent = "Modo Demo";
+                document.getElementById('status-text').textContent = "Error de conexión con la base de datos.";
             } finally {
                 document.getElementById('list-loader').classList.add('hidden');
                 const userLang = navigator.language || navigator.userLanguage;
@@ -436,19 +456,14 @@
             }
         }
 
-        // --- PDF GENERATION LOGIC ---
         window.downloadPDF = () => {
-            if (!window.jspdf) {
-                alert("Error: Librería PDF no cargada. Verifica tu conexión.");
-                return;
-            }
+            if (!window.jspdf) { alert("Error: Librería PDF no cargada."); return; }
             const { jsPDF } = window.jspdf;
             const client = state.allData.find(c => c.id === state.selectedId);
             
             if (!client) return;
-
             if (!client.transacciones) {
-                alert("⚠️ Faltan datos de transacciones.\n\nPor favor, asegúrate de haber actualizado el Google Apps Script y de haber hecho clic en 'Implementar > Nueva versión'.");
+                alert("⚠️ Faltan datos de transacciones.\nAsegúrate de actualizar el Google Apps Script a la última versión.");
                 return;
             }
 
@@ -470,17 +485,21 @@
             doc.setFontSize(12);
             doc.setTextColor(0);
             doc.text(`${t('pdf_client')} ${client.nombre}`, 14, 40);
-            const periodText = state.viewMode === 'bimester' ? t('tab_bimester') : t('tab_feb');
+            
+            let periodText = t('tab_trimester');
+            if (state.viewMode === 'january') periodText = t('tab_jan');
+            if (state.viewMode === 'february') periodText = t('tab_feb');
+            if (state.viewMode === 'march') periodText = t('tab_mar');
             doc.text(`${t('pdf_period')} ${periodText} (2025 vs 2026)`, 14, 46);
 
             // --- FILTER TRANSACTIONS FOR SELECTED PERIOD (BOTH YEARS) ---
+            const targetMes = state.viewMode === 'january' ? 0 : (state.viewMode === 'february' ? 1 : (state.viewMode === 'march' ? 2 : -1));
             const transactions = client.transacciones.filter(t => {
                 if (t.anio !== 2025 && t.anio !== 2026) return false;
-                if (state.viewMode === 'february' && t.mes !== 1) return false; // Solo febrero si aplica
+                if (state.viewMode !== 'trimester' && t.mes !== targetMes) return false;
                 return true;
             });
 
-            // Agrupar por variedad (Calculando ambos años)
             const varietyMap = {};
             transactions.forEach(t => {
                 if (!varietyMap[t.variedad]) {
@@ -495,21 +514,20 @@
                 }
             });
 
-            // Función para dar color a la columna de crecimiento
             const colorizeGrowth = function(data) {
                 if (data.section === 'body' && data.column.index === 3) {
                     const text = data.cell.raw;
                     if (text.includes('-')) {
-                        data.cell.styles.textColor = [220, 38, 38]; // Red
+                        data.cell.styles.textColor = [220, 38, 38]; 
                         data.cell.styles.fontStyle = 'bold';
                     } else if (text.includes('+') || text.includes('NUEV') || text.includes('NOUVEAU')) {
-                        data.cell.styles.textColor = [22, 163, 74]; // Green
+                        data.cell.styles.textColor = [22, 163, 74]; 
                         data.cell.styles.fontStyle = 'bold';
                     }
                 }
             };
 
-            // --- 1. TABLA RESUMEN KG POR VARIEDAD ---
+            // --- 1. TABLA RESUMEN KG ---
             doc.setFontSize(11);
             doc.setTextColor(30, 58, 138);
             doc.text(t('pdf_sec_varieties_kg'), 14, 58);
@@ -518,19 +536,19 @@
                 const pct = d.kg25 > 0 ? ((d.kg26 - d.kg25) / d.kg25) * 100 : (d.kg26 > 0 ? 100 : 0);
                 const pctStr = d.kg25 === 0 && d.kg26 > 0 ? t('badge_new') : formatPercent(pct);
                 return [v, formatWeight(d.kg25), formatWeight(d.kg26), pctStr];
-            }).sort((a, b) => parseFloat(b[2].replace(/[^\d.-]/g, '')) - parseFloat(a[2].replace(/[^\d.-]/g, ''))); // Sort by 2026
+            }).sort((a, b) => parseFloat(b[2].replace(/[^\d.-]/g, '')) - parseFloat(a[2].replace(/[^\d.-]/g, '')));
 
             doc.autoTable({
                 startY: 62,
                 head: [[t('pdf_col_var'), t('pdf_col_kg_25'), t('pdf_col_kg_26'), t('pdf_col_var_pct')]],
                 body: kgData,
                 theme: 'striped',
-                headStyles: { fillColor: [71, 85, 105] }, // Slate
+                headStyles: { fillColor: [71, 85, 105] }, 
                 styles: { fontSize: 9 },
                 didParseCell: colorizeGrowth
             });
 
-            // --- 2. TABLA RESUMEN $ POR VARIEDAD ---
+            // --- 2. TABLA RESUMEN $ ---
             let finalY = doc.lastAutoTable.finalY + 12;
             doc.setFontSize(11);
             doc.setTextColor(30, 58, 138);
@@ -552,13 +570,12 @@
                 didParseCell: colorizeGrowth
             });
 
-            // --- 3. REGISTRO DETALLADO DE TRANSACCIONES (Ambos Años, Cronológico) ---
+            // --- 3. REGISTRO TRANSACCIONES ---
             finalY = doc.lastAutoTable.finalY + 15;
             doc.setFontSize(11);
             doc.setTextColor(30, 58, 138);
             doc.text(t('pdf_sec_invoices'), 14, finalY);
 
-            // Ordenar transacciones de más antigua a más reciente
             transactions.sort((a, b) => {
                 const parseDate = str => {
                     const parts = str.split('/');
@@ -589,24 +606,17 @@
 
             // --- 4. ANÁLISIS ---
             finalY = doc.lastAutoTable.finalY + 15;
-            
-            // Check if page break is needed for analysis
-            if (finalY > 260) {
-                doc.addPage();
-                finalY = 20;
-            }
+            if (finalY > 260) { doc.addPage(); finalY = 20; }
 
             const vals = getClientValues(client);
             const base = state.metricMode === 'weight' ? vals.weight25 : vals.money25;
             const curr = state.metricMode === 'weight' ? vals.weight26 : vals.money26;
             
-            let growthText = "-";
-            let color = [0, 0, 0];
+            let growthText = "-"; let color = [0, 0, 0];
             if (base > 0) {
                 const pct = ((curr - base) / base) * 100;
                 growthText = formatPercent(pct);
-                if (pct < 0) color = [220, 38, 38]; 
-                else color = [22, 163, 74]; 
+                if (pct < 0) color = [220, 38, 38]; else color = [22, 163, 74]; 
             }
 
             doc.setFontSize(11);
@@ -623,13 +633,16 @@
 
             const alertProducts = client.productos.filter(p => {
                 const p25Raw = getProductData(p, 2025);
-                const pBase = state.viewMode === 'bimester' 
-                    ? (state.metricMode==='weight' ? p25Raw.w_total : p25Raw.m_total)
-                    : (state.metricMode==='weight' ? p25Raw.w_feb : p25Raw.m_feb);
+                let pBase = 0, pCurr = 0;
                 
-                const pCurr = state.viewMode === 'bimester'
-                    ? (state.metricMode==='weight' ? (p.w26_total || (p.w26_ene+p.w26_feb)) : (p.v26_total || (p.v26_ene+p.v26_feb)))
-                    : (state.metricMode==='weight' ? p.w26_feb : p.v26_feb);
+                if (state.viewMode === 'trimester') {
+                    pBase = state.metricMode === 'weight' ? p25Raw.w_total : p25Raw.m_total;
+                    pCurr = state.metricMode === 'weight' ? (p.w26_total || (p.w26_ene+p.w26_feb+p.w26_mar)) : (p.v26_total || (p.v26_ene+p.v26_feb+p.v26_mar));
+                } else {
+                    const mIdx = state.viewMode === 'january' ? 'ene' : (state.viewMode === 'february' ? 'feb' : 'mar');
+                    pBase = state.metricMode === 'weight' ? p25Raw[`w_${mIdx}`] : p25Raw[`m_${mIdx}`];
+                    pCurr = state.metricMode === 'weight' ? p[`w26_${mIdx}`] : p[`v26_${mIdx}`];
+                }
 
                 if (pBase > 0) {
                     const drop = ((pCurr - pBase) / pBase) * 100;
@@ -650,26 +663,24 @@
 
                 let yPos = finalY + 26;
                 alertProducts.forEach(p => {
-                    if (yPos > 280) { // Page break protection for list
-                        doc.addPage();
-                        yPos = 20;
-                    }
+                    if (yPos > 280) { doc.addPage(); yPos = 20; }
                     doc.text(`• ${p.nombre}`, 18, yPos);
                     yPos += 5;
                 });
             }
 
-            doc.save(`${client.nombre}_Reporte_Comparativo.pdf`);
+            doc.save(`${client.nombre}_Reporte.pdf`);
         };
 
         window.changeView = (mode) => {
             state.viewMode = mode;
-            const btnFeb = document.getElementById('tab-february');
-            const btnBim = document.getElementById('tab-bimester');
-            const activeClass = "flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-active touch-manipulation";
-            const inactiveClass = "flex-1 py-3 md:py-2 px-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center tab-inactive touch-manipulation";
-            if (mode === 'february') { btnFeb.className = activeClass; btnBim.className = inactiveClass; } 
-            else { btnFeb.className = inactiveClass; btnBim.className = activeClass; }
+            
+            const btns = ['tab-trimester', 'tab-january', 'tab-february', 'tab-march'];
+            btns.forEach(id => {
+                const isMatch = (id === `tab-${mode}`);
+                document.getElementById(id).className = `py-2 px-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center touch-manipulation flex flex-col items-center justify-center ${isMatch ? 'tab-active' : 'tab-inactive'}`;
+            });
+
             updateHeaders(); updateUI();
             if (state.selectedId) { const client = state.allData.find(c => c.id === state.selectedId); if (client) renderDetail(client); }
         };
@@ -687,10 +698,17 @@
         function updateHeaders() {
             const header25 = document.querySelector('.header-year-2025');
             const header26 = document.querySelector('.header-year-2026');
+            
+            let periodLabel = t('tab_trimester').replace('1er ', '');
+            if (state.viewMode === 'january') periodLabel = t('col_jan_2025').split(' ')[0];
+            if (state.viewMode === 'february') periodLabel = t('col_feb_2025').split(' ')[0];
+            if (state.viewMode === 'march') periodLabel = t('col_mar_2025').split(' ')[0];
+
             if(header25 && header26) {
-                header25.textContent = state.viewMode === 'bimester' ? t('col_total_2025') : t('col_feb_2025');
-                header26.textContent = state.viewMode === 'bimester' ? t('col_total_2026') : t('col_feb_2026');
+                header25.textContent = state.viewMode === 'trimester' ? t('col_total_2025') : `${periodLabel} 2025`;
+                header26.textContent = state.viewMode === 'trimester' ? t('col_total_2026') : `${periodLabel} 2026`;
             }
+            
             const detailH25 = document.getElementById('header-2025');
             const detailH26 = document.getElementById('header-2026');
             if(detailH25 && detailH26) {
@@ -698,15 +716,32 @@
                 detailH25.textContent = t(keyPrefix + '2025');
                 detailH26.textContent = t(keyPrefix + '2026');
             }
+
+            // Ocultar o mostrar columnas de meses en tablas de detalle dependiendo de la vista
+            const displayMonthCols = state.viewMode === 'trimester' ? 'table-cell' : 'none';
+            document.querySelectorAll('.col-ene, .col-feb, .col-mar').forEach(el => {
+                // Solo alterar en vistas desktop o en general
+                el.style.display = displayMonthCols; 
+            });
+            // Cambiar titulo de Total según vista
+            document.querySelectorAll('.col-total').forEach(el => {
+                if (el.dataset.i18n === 'col_sum_2026') {
+                    el.textContent = state.viewMode === 'trimester' ? t('col_sum_2026') : `${periodLabel} 2026`;
+                } else if (el.dataset.i18n === 'col_sum_2025') {
+                    el.textContent = state.viewMode === 'trimester' ? t('col_sum_2025') : `${periodLabel} 2025`;
+                }
+            });
         }
 
         function getClientValues(client) {
-            if (state.viewMode === 'bimester') {
+            if (state.viewMode === 'trimester') {
                 return { money25: client.ventas2025, money26: client.ventas2026, weight25: client.peso2025, weight26: client.peso2026 };
             } else {
                 let m25=0, m26=0, w25=0, w26=0;
+                const mIdx = state.viewMode === 'january' ? 'ene' : (state.viewMode === 'february' ? 'feb' : 'mar');
                 client.productos.forEach(p => {
-                    m25 += (p.v25_feb || 0); m26 += (p.v26_feb || 0); w25 += (p.w25_feb || 0); w26 += (p.w26_feb || 0);
+                    m25 += (p[`v25_${mIdx}`] || 0); m26 += (p[`v26_${mIdx}`] || 0); 
+                    w25 += (p[`w25_${mIdx}`] || 0); w26 += (p[`w26_${mIdx}`] || 0);
                 });
                 return { money25: m25, money26: m26, weight25: w25, weight26: w26 };
             }
@@ -798,11 +833,16 @@
             document.getElementById('detail-content').classList.remove('hidden');
             const vals = getClientValues(client);
             document.getElementById('detail-title').textContent = client.nombre;
-            document.getElementById('detail-subtitle').textContent = state.viewMode === 'bimester' ? t('detail_subtitle_bim') : t('detail_subtitle_feb');
+            
+            let subT = t('detail_subtitle_tri');
+            if (state.viewMode === 'january') subT = t('detail_subtitle_jan');
+            if (state.viewMode === 'february') subT = t('detail_subtitle_feb');
+            if (state.viewMode === 'march') subT = t('detail_subtitle_mar');
+            document.getElementById('detail-subtitle').textContent = subText = subT;
+
             document.getElementById('total-2025').innerHTML = getDualValueHTML(vals.money25, vals.weight25);
             document.getElementById('total-2026').innerHTML = getDualValueHTML(vals.money26, vals.weight26);
-            const displayEne = state.viewMode === 'bimester' ? 'table-cell' : 'none';
-            document.querySelectorAll('.col-ene').forEach(el => el.style.display = displayEne);
+            
             updateHeaders();
             renderDetailTable('tbody-2025', client.productos, 2025);
             renderDetailTable('tbody-2026', client.productos, 2026);
@@ -813,16 +853,25 @@
             tbody.innerHTML = '';
             const items = products.map(p => {
                 const prefix = year === 2026 ? '26' : '25';
-                const m_ene = p[`v${prefix}_ene`] || 0; const m_feb = p[`v${prefix}_feb`] || 0;
-                const w_ene = p[`w${prefix}_ene`] || 0; const w_feb = p[`w${prefix}_feb`] || 0;
-                const m_total = state.viewMode === 'bimester' ? (p[`v${prefix}_total`] || (m_ene+m_feb)) : m_feb;
-                const w_total = state.viewMode === 'bimester' ? (p[`w${prefix}_total`] || (w_ene+w_feb)) : w_feb;
+                const m_ene = p[`v${prefix}_ene`] || 0; const m_feb = p[`v${prefix}_feb`] || 0; const m_mar = p[`v${prefix}_mar`] || 0;
+                const w_ene = p[`w${prefix}_ene`] || 0; const w_feb = p[`w${prefix}_feb`] || 0; const w_mar = p[`w${prefix}_mar`] || 0;
+                
+                let m_total = 0; let w_total = 0;
+                if (state.viewMode === 'trimester') {
+                    m_total = p[`v${prefix}_total`] || (m_ene+m_feb+m_mar);
+                    w_total = p[`w${prefix}_total`] || (w_ene+w_feb+w_mar);
+                } else {
+                    const mIdx = state.viewMode === 'january' ? 'ene' : (state.viewMode === 'february' ? 'feb' : 'mar');
+                    m_total = p[`v${prefix}_${mIdx}`] || 0;
+                    w_total = p[`w${prefix}_${mIdx}`] || 0;
+                }
+
                 const primary = state.metricMode === 'weight' ? w_total : m_total;
-                return { ...p, m_ene, m_feb, w_ene, w_feb, m_total, w_total, primary };
+                return { ...p, m_ene, m_feb, m_mar, w_ene, w_feb, w_mar, m_total, w_total, primary };
             }).filter(p => p.primary > 0).sort((a,b) => b.primary - a.primary);
 
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-slate-400 italic">${t('no_records_year')} ${year}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-slate-400 italic">${t('no_records_year')} ${year}</td></tr>`;
                 return;
             }
 
@@ -832,8 +881,15 @@
                 let growthCell = '';
                 if (year === 2026) {
                     const p25Raw = getProductData(p, 2025); 
-                    const m25 = state.viewMode === 'bimester' ? p25Raw.m_total : p25Raw.m_feb;
-                    const w25 = state.viewMode === 'bimester' ? p25Raw.w_total : p25Raw.w_feb;
+                    
+                    let m25=0, w25=0;
+                    if (state.viewMode === 'trimester') {
+                        m25 = p25Raw.m_total; w25 = p25Raw.w_total;
+                    } else {
+                        const mIdx = state.viewMode === 'january' ? 'ene' : (state.viewMode === 'february' ? 'feb' : 'mar');
+                        m25 = p25Raw[`m_${mIdx}`]; w25 = p25Raw[`w_${mIdx}`];
+                    }
+
                     const base = state.metricMode === 'weight' ? w25 : m25;
                     const current = state.metricMode === 'weight' ? p.w_total : p.m_total;
                     let badge = '<span class="text-slate-300 text-xs">-</span>';
@@ -847,17 +903,25 @@
                     }
                     growthCell = `<td class="px-4 md:px-6 py-3 text-right">${badge}</td>`;
                 } else { growthCell = `<td class="px-4 md:px-6 py-3"></td>`; }
-                const displayEne = state.viewMode === 'bimester' ? '' : 'display:none;';
-                tr.innerHTML = `<td class="px-4 md:px-6 py-3 font-medium text-slate-700 break-words w-5/12 text-xs sm:text-sm">${p.nombre}</td><td class="px-4 md:px-6 py-3" style="${displayEne}">${getDualValueHTML(p.m_ene, p.w_ene)}</td><td class="px-4 md:px-6 py-3">${getDualValueHTML(p.m_feb, p.w_feb)}</td><td class="px-4 md:px-6 py-3 bg-slate-50/50">${getDualValueHTML(p.m_total, p.w_total)}</td>${growthCell}`;
+                
+                const displayCols = state.viewMode === 'trimester' ? '' : 'display:none;';
+                tr.innerHTML = `
+                    <td class="px-4 md:px-6 py-3 font-medium text-slate-700 break-words w-4/12 text-xs sm:text-sm">${p.nombre}</td>
+                    <td class="px-2 md:px-4 py-3 hidden md:table-cell" style="${displayCols}">${getDualValueHTML(p.m_ene, p.w_ene)}</td>
+                    <td class="px-2 md:px-4 py-3 hidden md:table-cell" style="${displayCols}">${getDualValueHTML(p.m_feb, p.w_feb)}</td>
+                    <td class="px-2 md:px-4 py-3 hidden md:table-cell" style="${displayCols}">${getDualValueHTML(p.m_mar, p.w_mar)}</td>
+                    <td class="px-4 md:px-6 py-3 bg-slate-50/50">${getDualValueHTML(p.m_total, p.w_total)}</td>
+                    ${growthCell}
+                `;
                 tbody.appendChild(tr);
             });
         }
 
         function getProductData(rawProd, year) {
             const prefix = '25';
-            const m_ene = rawProd[`v${prefix}_ene`] || 0; const m_feb = rawProd[`v${prefix}_feb`] || 0; const m_total = rawProd[`v${prefix}_total`] || 0;
-            const w_ene = rawProd[`w${prefix}_ene`] || 0; const w_feb = rawProd[`w${prefix}_feb`] || 0; const w_total = rawProd[`w${prefix}_total`] || 0;
-            return { m_ene, m_feb, m_total, w_ene, w_feb, w_total };
+            const m_ene = rawProd[`v${prefix}_ene`] || 0; const m_feb = rawProd[`v${prefix}_feb`] || 0; const m_mar = rawProd[`v${prefix}_mar`] || 0; const m_total = rawProd[`v${prefix}_total`] || 0;
+            const w_ene = rawProd[`w${prefix}_ene`] || 0; const w_feb = rawProd[`w${prefix}_feb`] || 0; const w_mar = rawProd[`w${prefix}_mar`] || 0; const w_total = rawProd[`w${prefix}_total`] || 0;
+            return { m_ene, m_feb, m_mar, m_total, w_ene, w_feb, w_mar, w_total };
         }
 
         window.openInvoiceModal = (year) => {
@@ -866,13 +930,22 @@
             const modal = document.getElementById('invoice-modal');
             const tbody = document.getElementById('modal-tbody');
             tbody.innerHTML = '';
+            
+            const targetMes = state.viewMode === 'january' ? 0 : (state.viewMode === 'february' ? 1 : (state.viewMode === 'march' ? 2 : -1));
             const filteredInvoices = client.facturas.filter(f => {
                 if (f.anio !== year) return false;
-                if (state.viewMode === 'february' && f.mes !== 1) return false;
+                if (state.viewMode !== 'trimester' && f.mes !== targetMes) return false;
                 return true;
             });
+
             document.getElementById('modal-title').textContent = `${t('modal_title_prefix')} ${year}`;
-            document.getElementById('modal-subtitle').textContent = state.viewMode === 'bimester' ? t('tab_bimester') : t('tab_feb');
+            
+            let periodText = t('tab_trimester');
+            if (state.viewMode === 'january') periodText = t('tab_jan');
+            if (state.viewMode === 'february') periodText = t('tab_feb');
+            if (state.viewMode === 'march') periodText = t('tab_mar');
+            document.getElementById('modal-subtitle').textContent = periodText;
+            
             if (filteredInvoices.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="2" class="px-6 py-8 text-center text-slate-400 italic">${t('no_records')}</td></tr>`;
                 document.getElementById('modal-total').textContent = formatCurrency(0);
