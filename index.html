@@ -166,9 +166,9 @@
                             PDF
                         </button>
                     </div>
-                    <div class="flex flex-wrap items-center gap-3 mt-2">
-                        <p id="detail-subtitle" class="text-sm text-slate-500"></p>
-                        <div id="detail-diff"></div> <!-- DIFERENCIA ABSOLUTA AQUI -->
+                    <div class="flex flex-wrap items-center gap-2 mt-2">
+                        <p id="detail-subtitle" class="text-sm text-slate-500 mr-2"></p>
+                        <div id="detail-diff" class="flex flex-wrap gap-2"></div> <!-- ETIQUETAS AQUI -->
                     </div>
                 </div>
 
@@ -287,9 +287,13 @@
                 th_invoice: "# Factura",
                 th_amount: "Monto",
                 back_list: "Volver a la lista",
-                // NUEVAS TRADUCCIONES PARA LA DIFERENCIA
+                
+                // DIFERENCIAS
                 diff_gap: "Faltan",
                 diff_surplus: "Superado por",
+                meta_gap: "Faltan para meta",
+                meta_surplus: "Meta superada por",
+                
                 // PDF KEYS
                 pdf_title: "Reporte de Desempeño Comercial",
                 pdf_client: "CLIENTE:",
@@ -312,7 +316,8 @@
                 pdf_col_total: "Total",
                 pdf_sec_analysis: "ANÁLISIS DE DESEMPEÑO",
                 pdf_growth_gen: "Crecimiento General (Métrica Activa):",
-                pdf_diff: "Diferencia vs año ant.",
+                pdf_diff: "Diferencia vs año ant.:",
+                pdf_meta: "Progreso Meta (+30%):",
                 pdf_alert_title: "⚠️ PRODUCTOS CON CAÍDA CRÍTICA (>10%)",
                 pdf_alert_msg: "Se recomienda revisar el consumo de los siguientes productos:"
             },
@@ -366,9 +371,13 @@
                 th_invoice: "# Facture",
                 th_amount: "Montant",
                 back_list: "Retour à la liste",
-                // NUEVAS TRADUCCIONES PARA LA DIFERENCIA
+                
+                // DIFERENCIAS
                 diff_gap: "Manque",
                 diff_surplus: "Dépassé de",
+                meta_gap: "Manque pour obj.",
+                meta_surplus: "Obj. dépassé de",
+                
                 // PDF KEYS
                 pdf_title: "Rapport de Performance Commerciale",
                 pdf_client: "CLIENT:",
@@ -391,7 +400,8 @@
                 pdf_col_total: "Total",
                 pdf_sec_analysis: "ANALYSE DE PERFORMANCE",
                 pdf_growth_gen: "Croissance Générale (Métrique Active):",
-                pdf_diff: "Différence vs année préc.",
+                pdf_diff: "Différence vs année préc.:",
+                pdf_meta: "Progrès Obj. (+30%):",
                 pdf_alert_title: "⚠️ PRODUITS EN BAISSE CRITIQUE (>10%)",
                 pdf_alert_msg: "Il est recommandé de vérifier la consommation des produits suivants:"
             }
@@ -660,6 +670,24 @@
             doc.text(diffText, 80, finalY + 13);
             doc.setFont(undefined, 'normal');
 
+            // PDF GOAL LINE (META 30%)
+            if (base > 0) {
+                const goal = base * 1.30;
+                const goalDiff = curr - goal;
+                const formattedGoalDiff = state.metricMode === 'weight' ? formatWeight(Math.abs(goalDiff)) : formatCurrency(Math.abs(goalDiff));
+                const goalLabel = goalDiff >= 0 ? t('meta_surplus') : t('meta_gap');
+                const goalText = `${goalDiff >= 0 ? '+' : '-'}${formattedGoalDiff} (${goalLabel})`;
+                const goalColorPdf = goalDiff >= 0 ? [16, 185, 129] : [249, 115, 22]; // Emerald/Orange
+
+                doc.setTextColor(0);
+                doc.setFont(undefined, 'normal');
+                doc.text(`${t('pdf_meta')} `, 14, finalY + 19);
+                doc.setTextColor(goalColorPdf[0], goalColorPdf[1], goalColorPdf[2]);
+                doc.setFont(undefined, 'bold');
+                doc.text(goalText, 80, finalY + 19);
+                finalY += 6;
+            }
+
             finalY += 6;
 
             const alertProducts = client.productos.filter(p => {
@@ -826,6 +854,9 @@
                 el.onclick = () => { selectClient(item); };
                 
                 let badge = '';
+                let diffStr = '';
+                let metaStr = '';
+
                 const primary25 = state.metricMode === 'weight' ? item.vals.weight25 : item.vals.money25;
                 const primary26 = state.metricMode === 'weight' ? item.vals.weight26 : item.vals.money26;
                 
@@ -837,18 +868,25 @@
                     badge = `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium border ${color}">${icon} ${Math.abs(item.growth).toFixed(1)}%</span>`;
                 }
 
-                // ABSOLUTE DIFFERENCE FOR SIDEBAR
-                let diffStr = '';
+                // DIFERENCIAS ABSOLUTAS EN LA BARRA LATERAL
                 if (!item.isNew && primary25 > 0) {
                     const diff = primary26 - primary25;
                     const diffFormatted = state.metricMode === 'weight' ? formatWeight(Math.abs(diff)) : formatCurrency(Math.abs(diff));
                     const diffColor = diff >= 0 ? 'text-green-600' : 'text-red-500';
                     const diffSign = diff >= 0 ? '+' : '-';
-                    diffStr = `<span class="text-[9px] font-bold ${diffColor}">${diffSign}${diffFormatted}</span>`;
+                    diffStr = `<span class="text-[9px] font-bold ${diffColor}" title="Diferencia vs año anterior">${diffSign}${diffFormatted}</span>`;
+
+                    // META DEL 30%
+                    const goal = primary25 * 1.30;
+                    const goalDiff = primary26 - goal;
+                    const goalFormatted = state.metricMode === 'weight' ? formatWeight(Math.abs(goalDiff)) : formatCurrency(Math.abs(goalDiff));
+                    const goalColorClass = goalDiff >= 0 ? 'text-emerald-600' : 'text-orange-500';
+                    const goalSign = goalDiff >= 0 ? '+' : '-';
+                    metaStr = `<span class="text-[9px] font-bold ${goalColorClass}" title="Diferencia contra Meta del 30%">🎯 ${goalSign}${goalFormatted}</span>`;
                 }
 
                 const activeBorder = isSelected ? '<div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r"></div>' : '';
-                el.innerHTML = `${activeBorder}<div class="col-span-6 pr-2 pl-2 flex flex-col justify-center"><p class="text-xs font-bold text-wrap ${isSelected ? 'text-blue-700' : 'text-slate-700'}">${item.nombre}</p><div class="flex items-center gap-1 mt-1 flex-wrap">${badge}${diffStr}</div></div><div class="col-span-3">${getDualValueHTML(item.vals.money25, item.vals.weight25)}</div><div class="col-span-3">${getDualValueHTML(item.vals.money26, item.vals.weight26)}</div>`;
+                el.innerHTML = `${activeBorder}<div class="col-span-6 pr-2 pl-2 flex flex-col justify-center"><p class="text-xs font-bold text-wrap ${isSelected ? 'text-blue-700' : 'text-slate-700'}">${item.nombre}</p><div class="flex items-center gap-1.5 mt-1 flex-wrap">${badge}${diffStr}${metaStr}</div></div><div class="col-span-3">${getDualValueHTML(item.vals.money25, item.vals.weight25)}</div><div class="col-span-3">${getDualValueHTML(item.vals.money26, item.vals.weight26)}</div>`;
                 container.appendChild(el);
             });
         }
@@ -884,20 +922,32 @@
             if (state.viewMode === 'march') subT = t('detail_subtitle_mar');
             document.getElementById('detail-subtitle').textContent = subT;
 
-            // ABSOLUTE DIFFERENCE FOR DETAIL VIEW
+            // ETIQUETAS DE DIFERENCIA (VS AÑO ANTERIOR Y META 30%)
             const primary25 = state.metricMode === 'weight' ? vals.weight25 : vals.money25;
             const primary26 = state.metricMode === 'weight' ? vals.weight26 : vals.money26;
-            const diff = primary26 - primary25;
-
+            
             let diffHtml = '';
+            let metaHtml = '';
+
             if (primary25 > 0) {
+                // VS Año Anterior
+                const diff = primary26 - primary25;
                 const formattedDiff = state.metricMode === 'weight' ? formatWeight(Math.abs(diff)) : formatCurrency(Math.abs(diff));
                 const diffColor = diff >= 0 ? 'text-green-700 bg-green-100 border-green-200' : 'text-red-700 bg-red-100 border-red-200';
                 const diffLabel = diff >= 0 ? t('diff_surplus') : t('diff_gap');
                 const diffIcon = diff >= 0 ? '▲' : '▼';
                 diffHtml = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border ${diffColor}">${diffIcon} ${diffLabel} ${formattedDiff}</span>`;
+
+                // VS Meta 30%
+                const goal = primary25 * 1.30;
+                const goalDiff = primary26 - goal;
+                const formattedGoalDiff = state.metricMode === 'weight' ? formatWeight(Math.abs(goalDiff)) : formatCurrency(Math.abs(goalDiff));
+                const goalColorClass = goalDiff >= 0 ? 'text-emerald-700 bg-emerald-100 border-emerald-200' : 'text-orange-700 bg-orange-100 border-orange-200';
+                const goalLabel = goalDiff >= 0 ? t('meta_surplus') : t('meta_gap');
+                metaHtml = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border ${goalColorClass}">🎯 ${goalLabel} ${formattedGoalDiff}</span>`;
             }
-            document.getElementById('detail-diff').innerHTML = diffHtml;
+
+            document.getElementById('detail-diff').innerHTML = diffHtml + metaHtml;
 
             document.getElementById('total-2025').innerHTML = getDualValueHTML(vals.money25, vals.weight25);
             document.getElementById('total-2026').innerHTML = getDualValueHTML(vals.money26, vals.weight26);
